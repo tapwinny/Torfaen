@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torfaen Knowledge — A Driver's Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --paper: #1a1424;
+  --paper-dark: #0f0a17;
+  --paper-light: #251c33;
+  --ink: #f4f0fa;
+  --ink-soft: #b8a8d4;
+  --ink-muted: #7a6a96;
+  --rust: #d946ef;
+  --rust-dark: #a21caf;
+  --moss: #8b5cf6;
+  --gold: #f0abfc;
+  --line: #4a3a6b;
+  --line-bright: #7c3aed;
+  --glow: rgba(168, 85, 247, 0.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 18px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(217, 70, 239, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.10) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.04) 0%, transparent 70%),
+    repeating-linear-gradient(45deg, transparent 0px, transparent 2px, rgba(244, 240, 250, 0.008) 2px, rgba(244, 240, 250, 0.008) 3px);
+}
+
+/* ====== TOP MASTHEAD ====== */
+.masthead {
+  border-bottom: 3px double var(--line-bright);
+  padding: 32px 24px 24px;
+  text-align: center;
+  position: relative;
+  background:
+    radial-gradient(ellipse at center top, rgba(168, 85, 247, 0.15) 0%, transparent 60%);
+}
+
+.masthead::before, .masthead::after {
+  content: '✦';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--rust);
+  font-size: 18px;
+  text-shadow: 0 0 12px var(--glow);
+}
+.masthead::before { left: 5%; }
+.masthead::after { right: 5%; }
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--rust);
+  margin-bottom: 10px;
+  text-shadow: 0 0 8px var(--glow);
+}
+
+.masthead h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 800;
+  font-size: clamp(38px, 7vw, 72px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  font-style: italic;
+  background: linear-gradient(135deg, #f4f0fa 0%, #d946ef 50%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.3));
+}
+
+.masthead h1 span {
+  display: block;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 0.45em;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  margin-top: 8px;
+  text-transform: uppercase;
+  -webkit-text-fill-color: var(--ink-soft);
+  filter: none;
+}
+
+.tagline {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink-soft);
+  margin-top: 14px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ====== LAYOUT ====== */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-top: 24px;
+}
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* ====== MAP ====== */
+.map-section {
+  border: 1px solid var(--line-bright);
+  background: var(--paper);
+  position: sticky;
+  top: 20px;
+  align-self: start;
+  box-shadow:
+    4px 4px 0 var(--line),
+    0 0 30px rgba(168, 85, 247, 0.15);
+}
+
+@media (max-width: 900px) {
+  .map-section { position: static; }
+}
+
+.map-header {
+  background: linear-gradient(135deg, #1a1424 0%, #2d1b4e 100%);
+  color: var(--ink);
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid var(--line-bright);
+}
+
+.map-header h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 20px;
+  letter-spacing: 0.01em;
+  color: var(--gold);
+  text-shadow: 0 0 12px rgba(240, 171, 252, 0.3);
+}
+
+.map-header .ref {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+
+/* ====== BOUNDARY POLYGONS ====== */
+.boundary-tooltip {
+  background: var(--paper-light) !important;
+  color: var(--gold) !important;
+  border: 1px solid var(--line-bright) !important;
+  border-radius: 0 !important;
+  padding: 4px 10px !important;
+  font-family: 'Fraunces', serif !important;
+  font-style: italic !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  box-shadow: 2px 2px 0 var(--line), 0 0 12px rgba(168, 85, 247, 0.3) !important;
+}
+
+.boundary-tooltip::before {
+  border-top-color: var(--line-bright) !important;
+}
+
+.boundary-handle {
+  width: 14px;
+  height: 14px;
+  background: var(--gold);
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line), 0 0 10px rgba(240, 171, 252, 0.6);
+  cursor: grab;
+}
+
+.boundary-handle:hover {
+  transform: scale(1.4);
+  background: var(--rust);
+}
+
+/* ====== EDIT MODE PANEL ====== */
+.edit-panel {
+  background: var(--paper-light);
+  border-top: 1px solid var(--line-bright);
+  padding: 10px 14px;
+}
+
+.edit-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.edit-btn {
+  background: var(--paper-dark);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.edit-btn:hover:not(:disabled) {
+  background: var(--paper);
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.edit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.edit-btn.active {
+  background: linear-gradient(135deg, var(--rust-dark) 0%, var(--rust) 100%);
+  color: var(--ink);
+  border-color: var(--rust);
+  box-shadow: 0 0 12px var(--glow);
+}
+
+.edit-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--ink-muted);
+  padding: 4px 0;
+  word-break: break-word;
+}
+
+.edit-status.has-update {
+  color: var(--gold);
+}
+
+.edit-status code {
+  background: var(--paper-dark);
+  padding: 2px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  user-select: all;
+}
+
+/* Visual cue when edit mode is on */
+#map.edit-active {
+  outline: 2px dashed var(--rust);
+  outline-offset: -4px;
+}
+
+.custom-marker.dragging {
+  cursor: grabbing !important;
+}
+
+.edit-active .custom-marker {
+  cursor: grab;
+}
+
+.edit-active .leaflet-marker-draggable {
+  cursor: grab !important;
+}
+
+/* ====== EDIT MODE PANEL END ====== */
+
+/* ====== SEARCH BAR ====== */
+.search-bar {
+  position: relative;
+  background: var(--paper-light);
+  border-bottom: 1px solid var(--line-bright);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-bar::before {
+  content: '⌕';
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gold);
+  font-size: 18px;
+  pointer-events: none;
+  text-shadow: 0 0 8px rgba(240, 171, 252, 0.4);
+}
+
+#search-input {
+  flex: 1;
+  background: var(--paper-dark);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  padding: 10px 12px 10px 36px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+#search-input::placeholder {
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+#search-input:focus {
+  border-color: var(--rust);
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.3);
+}
+
+#search-clear {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.15s ease;
+}
+
+#search-clear:hover {
+  color: var(--rust);
+  border-color: var(--rust);
+}
+
+.search-bar.has-query #search-clear {
+  display: flex;
+}
+
+.search-results {
+  display: none;
+  max-height: 0;
+  overflow: hidden;
+  background: var(--paper-light);
+  border-bottom: 1px solid var(--line-bright);
+  transition: max-height 0.3s ease;
+}
+
+.search-results.open {
+  display: block;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.search-results-header {
+  padding: 8px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border-bottom: 1px dashed var(--line);
+  background: var(--paper-dark);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.search-result-item {
+  padding: 9px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(74, 58, 107, 0.3);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.search-result-item:hover {
+  background: var(--paper);
+  padding-left: 20px;
+}
+
+.search-result-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.search-result-dot.landmark {
+  border-radius: 0;
+  transform: rotate(45deg);
+  background: var(--gold);
+  color: var(--gold);
+}
+
+.search-result-text {
+  flex: 1;
+}
+
+.search-result-name {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.search-result-note {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+.search-no-results {
+  padding: 16px;
+  text-align: center;
+  font-style: italic;
+  color: var(--ink-muted);
+}
+
+/* Dimmed markers when search is filtering */
+.custom-marker.dimmed {
+  opacity: 0.18;
+  filter: grayscale(0.7);
+}
+
+.custom-marker.search-match {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+}
+
+.custom-marker.landmark.search-match {
+  animation: pulse-landmark 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse-landmark {
+  0%, 100% { transform: rotate(45deg) scale(1); }
+  50% { transform: rotate(45deg) scale(1.35); }
+}
+
+#map {
+  height: 560px;
+  width: 100%;
+  background: var(--paper-dark);
+  position: relative;
+  transition: box-shadow 0.2s ease;
+}
+
+#map::after {
+  content: 'Click map to scroll-zoom';
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 500;
+  background: rgba(15, 10, 23, 0.9);
+  color: var(--gold);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 5px 9px;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  text-transform: uppercase;
+  border: 1px solid var(--line-bright);
+}
+
+#map.map-active::after {
+  content: 'Scroll-zoom active · click outside to release';
+  background: linear-gradient(135deg, var(--rust-dark) 0%, var(--rust) 100%);
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  #map { height: 400px; }
+}
+
+.map-legend {
+  padding: 12px 20px;
+  border-top: 1px solid var(--line-bright);
+  background: var(--paper-light);
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+
+.legend-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.legend-dot.blaenavon::before { background: #d946ef; box-shadow: 0 0 8px rgba(217, 70, 239, 0.5), 0 0 0 1px var(--line); }
+.legend-dot.pontypool::before { background: #f0abfc; box-shadow: 0 0 8px rgba(240, 171, 252, 0.5), 0 0 0 1px var(--line); }
+.legend-dot.cwmbran::before { background: #8b5cf6; box-shadow: 0 0 8px rgba(139, 92, 246, 0.5), 0 0 0 1px var(--line); }
+
+.legend-dot.landmark::before {
+  background: var(--ink);
+  border-radius: 0;
+  transform: rotate(45deg);
+  box-shadow: 0 0 8px rgba(244, 240, 250, 0.4), 0 0 0 1px var(--line);
+}
+
+/* ====== AREAS ====== */
+.areas-section {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.town {
+  border-left: 4px solid;
+  padding-left: 20px;
+  position: relative;
+}
+
+.town.blaenavon { border-color: #d946ef; }
+.town.pontypool { border-color: #f0abfc; }
+.town.cwmbran   { border-color: #8b5cf6; }
+
+.town-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.town h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 800;
+  font-size: 38px;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.town.blaenavon h2 { color: #f5d0fe; text-shadow: 0 0 20px rgba(217, 70, 239, 0.4); }
+.town.pontypool h2 { color: #fae8ff; text-shadow: 0 0 20px rgba(240, 171, 252, 0.4); }
+.town.cwmbran h2   { color: #ddd6fe; text-shadow: 0 0 20px rgba(139, 92, 246, 0.4); }
+
+.town .postcode {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+
+.town-blurb {
+  font-style: italic;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.area-group {
+  margin-top: 18px;
+}
+
+.area-group:first-child {
+  margin-top: 8px;
+}
+
+.area-group h3 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--line-bright);
+  text-shadow: 0 0 8px rgba(240, 171, 252, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.area-group h3 .cat-icon {
+  color: var(--rust);
+  font-size: 14px;
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+.area-group h3 .cat-count {
+  margin-left: auto;
+  background: var(--paper-dark);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  padding: 1px 7px;
+  font-size: 10px;
+  border-radius: 10px;
+  text-shadow: none;
+}
+
+.area-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.area-item {
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 16px;
+  position: relative;
+}
+
+.area-item:hover {
+  background: var(--paper-light);
+  padding-left: 14px;
+}
+
+.area-item.active {
+  background: linear-gradient(135deg, #7c3aed 0%, #d946ef 100%);
+  color: var(--ink);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+}
+
+.area-item.active .area-note {
+  color: rgba(244, 240, 250, 0.85);
+}
+
+.area-name {
+  font-weight: 600;
+  font-family: 'Fraunces', serif;
+  color: var(--ink);
+}
+
+.area-note {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+.area-item.active .area-name {
+  color: var(--ink);
+}
+
+/* ====== INTRO BANNER ====== */
+.intro {
+  border: 1px solid var(--line-bright);
+  background: linear-gradient(135deg, var(--paper-light) 0%, var(--paper) 100%);
+  padding: 20px 24px;
+  margin-bottom: 0;
+  position: relative;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  line-height: 1.55;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.1);
+}
+
+.intro::before {
+  content: 'NOTE';
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  background: linear-gradient(135deg, var(--rust-dark) 0%, var(--rust) 100%);
+  color: var(--ink);
+  padding: 2px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  box-shadow: 0 0 12px var(--glow);
+}
+
+.intro strong {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--gold);
+}
+
+/* ====== TIPS SECTION ====== */
+.tips {
+  margin-top: 48px;
+  padding: 32px;
+  background: linear-gradient(135deg, #0f0a17 0%, #2d1b4e 50%, #0f0a17 100%);
+  color: var(--ink);
+  position: relative;
+  box-shadow: 0 0 40px rgba(168, 85, 247, 0.2);
+}
+
+.tips::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid var(--rust);
+  pointer-events: none;
+  box-shadow: inset 0 0 20px rgba(217, 70, 239, 0.1);
+}
+
+.tips h2 {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 28px;
+  margin-bottom: 18px;
+  text-align: center;
+  background: linear-gradient(135deg, #f0abfc 0%, #d946ef 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-top: 14px;
+}
+
+.tip {
+  border-left: 2px solid var(--rust);
+  padding-left: 14px;
+  position: relative;
+}
+
+.tip-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(240, 171, 252, 0.4);
+}
+
+.tip-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 18px;
+  margin: 4px 0 6px;
+  color: var(--ink);
+}
+
+.tip-body {
+  font-size: 15px;
+  line-height: 1.5;
+  opacity: 0.85;
+  color: var(--ink-soft);
+}
+
+/* ====== FOOTER ====== */
+footer {
+  text-align: center;
+  padding: 32px 24px;
+  border-top: 3px double var(--line-bright);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.leaflet-container {
+  background: var(--paper-dark);
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.leaflet-popup-content-wrapper {
+  background: linear-gradient(135deg, var(--paper-light) 0%, var(--paper) 100%);
+  border: 1px solid var(--line-bright);
+  border-radius: 0;
+  box-shadow: 3px 3px 0 var(--line), 0 0 20px rgba(168, 85, 247, 0.3);
+  color: var(--ink);
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.leaflet-popup-content strong {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-style: italic;
+  color: var(--gold);
+  display: block;
+  margin-bottom: 4px;
+  text-shadow: 0 0 12px rgba(240, 171, 252, 0.3);
+}
+
+.leaflet-popup-tip {
+  background: var(--paper-light);
+  border: 1px solid var(--line-bright);
+}
+
+.leaflet-popup-close-button {
+  color: var(--gold) !important;
+  font-size: 18px !important;
+}
+
+.custom-marker.landmark {
+  border-radius: 0;
+  background: var(--gold) !important;
+  width: 12px !important;
+  height: 12px !important;
+  transform: rotate(45deg);
+  box-shadow: 0 0 0 1px var(--line), 0 0 14px rgba(240, 171, 252, 0.7);
+}
+
+.custom-marker.landmark:hover {
+  transform: rotate(45deg) scale(1.3);
+}
+
+.custom-marker.landmark.active {
+  transform: rotate(45deg) scale(1.6);
+}
+
+.custom-marker {
+  border-radius: 50%;
+  border: 2px solid var(--paper);
+  box-shadow: 0 0 0 1px var(--line), 0 0 12px currentColor, 2px 2px 4px rgba(0,0,0,0.4);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  position: relative;
+}
+
+/* Invisible larger hit area for easier clicking */
+.custom-marker::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: transparent;
+}
+
+.custom-marker:hover {
+  transform: scale(1.3);
+  z-index: 1000 !important;
+}
+
+.custom-marker.active {
+  transform: scale(1.6);
+  box-shadow: 0 0 0 2px var(--ink), 3px 3px 6px rgba(0,0,0,0.3);
+}
+
+/* Make leaflet attribution match the style */
+.leaflet-control-attribution {
+  background: rgba(26, 20, 36, 0.85) !important;
+  color: var(--ink-soft) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 9px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--gold) !important;
+}
+
+/* Zoom controls */
+.leaflet-bar a {
+  background: var(--paper-light) !important;
+  color: var(--gold) !important;
+  border: 1px solid var(--line-bright) !important;
+}
+
+.leaflet-bar a:hover {
+  background: var(--paper) !important;
+  color: var(--rust) !important;
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="eyebrow">Volume I · The Eastern Valley</div>
+  <h1>Torfaen<span>A Taxi Driver's Atlas</span></h1>
+  <p class="tagline">From Blaenavon's ironworks in the north to the gates of Llantarnam in the south — every village, hamlet and neighbourhood you'll need to know.</p>
+</header>
+
+<div class="container">
+
+  <div class="intro">
+    Torfaen runs as a long, narrow valley along the <strong>Afon Lwyd</strong> river. Three main towns are linked by the A4042/A4051 corridor: <strong>Blaenavon</strong> at the top, <strong>Pontypool</strong> in the middle, and <strong>Cwmbran</strong> at the bottom. Click any area below to highlight it on the map — or use the search bar to find places by name or by category (try <em>"all hospitals"</em> or <em>"pubs"</em>).
+  </div>
+
+  <div class="grid">
+
+    <!-- MAP -->
+    <div class="map-section">
+      <div class="map-header">
+        <h2>The Borough</h2>
+        <span class="ref">FIG. 01 · ORDNANCE</span>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search areas, landmarks, or try &quot;all hospitals&quot;…" autocomplete="off">
+        <button id="search-clear" type="button" aria-label="Clear search">×</button>
+      </div>
+      <div id="search-results" class="search-results"></div>
+      <div id="map"></div>
+      <div class="edit-panel">
+        <div class="edit-controls">
+          <button id="boundaries-toggle" type="button" class="edit-btn">⬡ Show boundaries</button>
+          <button id="boundaries-edit" type="button" class="edit-btn" disabled>✎ Edit boundaries</button>
+          <button id="edit-toggle" type="button" class="edit-btn">✎ Move pins</button>
+          <button id="edit-export" type="button" class="edit-btn" disabled>↓ Export updated file</button>
+          <button id="edit-reset" type="button" class="edit-btn" disabled>⟲ Reset</button>
+        </div>
+        <div id="edit-status" class="edit-status">Edit mode off. Toggle on to drag pins.</div>
+      </div>
+      <div class="map-legend">
+        <span class="legend-dot blaenavon">Blaenavon (north)</span>
+        <span class="legend-dot pontypool">Pontypool (centre)</span>
+        <span class="legend-dot cwmbran">Cwmbran (south)</span>
+        <span class="legend-dot landmark">Landmark</span>
+      </div>
+    </div>
+
+    <!-- AREAS -->
+    <div class="areas-section">
+
+      <!-- BLAENAVON -->
+      <section class="town blaenavon">
+        <div class="town-header">
+          <h2>Blaenavon</h2>
+          <span class="postcode">NP4 9 · North</span>
+        </div>
+        <p class="town-blurb">Small market town and UNESCO World Heritage Site, surrounded by upland and former ironworks/colliery settlements.</p>
+        <div class="town-categories" data-town-id="blaenavon"></div>
+      </section>
+
+      <!-- PONTYPOOL -->
+      <section class="town pontypool">
+        <div class="town-header">
+          <h2>Pontypool</h2>
+          <span class="postcode">NP4 · Centre</span>
+        </div>
+        <p class="town-blurb">Administrative centre of Torfaen — one of the earliest industrial towns in Wales, with iron smelting dating back to the 15th century.</p>
+        <div class="town-categories" data-town-id="pontypool"></div>
+      </section>
+
+      <!-- CWMBRAN -->
+      <section class="town cwmbran">
+        <div class="town-header">
+          <h2>Cwmbran</h2>
+          <span class="postcode">NP44 · South</span>
+        </div>
+        <p class="town-blurb">Wales's first New Town, designated 1949 — built around a network of older villages. The largest urban area in Torfaen.</p>
+        <div class="town-categories" data-town-id="cwmbran"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- TIPS -->
+  <section class="tips">
+    <h2>Memory Aids for the Test</h2>
+    <div class="tips-grid">
+      <div class="tip">
+        <div class="tip-num">№ 01</div>
+        <div class="tip-title">The Two "Ponts" Trap</div>
+        <div class="tip-body"><strong>Pontnewynydd</strong> sits north of Pontypool. <strong>Pontnewydd</strong> sits north of Cwmbran. Examiners love this confusion — get it locked in.</div>
+      </div>
+      <div class="tip">
+        <div class="tip-num">№ 02</div>
+        <div class="tip-title">North-to-South Spine</div>
+        <div class="tip-body">A4042/A4051 in order: Blaenavon → Cwmavon → Varteg → Garndiffaith → Talywain → Abersychan → Pontnewynydd → Pontypool → Sebastopol → Griffithstown → New Inn → Pontnewydd → Cwmbran → Llantarnam.</div>
+      </div>
+      <div class="tip">
+        <div class="tip-num">№ 03</div>
+        <div class="tip-title">Cwmbran Clockwise</div>
+        <div class="tip-body">From the north, clockwise: Pontnewydd, Croesyceiliog, Llanyrafon, Oakfield, Llantarnam, Hollybush/Two Locks, Coed Eva, Henllys, Ty Canol, Greenmeadow, Fairwater, St Dials, Thornhill, Upper Cwmbran.</div>
+      </div>
+      <div class="tip">
+        <div class="tip-num">№ 04</div>
+        <div class="tip-title">Key Landmarks</div>
+        <div class="tip-body">Pontypool Civic Centre (HQ), Pontypool &amp; New Inn rail station, Cwmbran rail station, Cwmbran Shopping Centre, The Grange University Hospital, Big Pit, Pontypool Park.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Compiled for the Torfaen Knowledge Test · Drive carefully
+</footer>
+
+<script>
+// ============ DATA ============
+const areas = [
+  // BLAENAVON
+  { id: 'blaenavon-centre', town: 'blaenavon', group: 'blaenavon', name: 'Blaenavon town centre', note: 'Broad Street, King Street, Queen Street, Ironworks. UNESCO World Heritage Site.', lat: 51.7722984, lng: -3.0856556 },
+  { id: 'forgeside', town: 'blaenavon', group: 'blaenavon', name: 'Forgeside', note: 'Across the valley from town — home of Big Pit.', lat: 51.771537, lng: -3.095317 },
+  { id: 'garn-yr-erw', town: 'blaenavon', group: 'blaenavon', name: 'Garn-yr-erw', note: 'Upland settlement to the NW, near Keepers Pond and the heritage railway.', lat: 51.7831614, lng: -3.1102933 },
+  { id: 'cwmavon', town: 'blaenavon', group: 'blaenavon', name: 'Cwmavon', note: 'Between Blaenavon and Varteg — canal-side conservation village.', lat: 51.7497552, lng: -3.0601658 },
+
+  // PONTYPOOL NORTH
+  { id: 'varteg', town: 'pontypool', group: 'pontypool-north', name: 'Varteg', note: 'Hilltop village above Garndiffaith.', lat: 51.7466949, lng: -3.0643098 },
+  { id: 'talywain', town: 'pontypool', group: 'pontypool-north', name: 'Talywain', note: 'Between Garndiffaith and Abersychan.', lat: 51.730524, lng: -3.071557 },
+  { id: 'garndiffaith', town: 'pontypool', group: 'pontypool-north', name: 'Garndiffaith', note: 'Village famous for its stone viaduct.', lat: 51.7226882, lng: -3.0569143 },
+  { id: 'pentwyn', town: 'pontypool', group: 'pontypool-north', name: 'Pentwyn', note: 'Small settlement near Abersychan.', lat: 51.7244, lng: -3.0663 },
+  { id: 'abersychan', town: 'pontypool', group: 'pontypool-north', name: 'Abersychan', note: 'Town north of Pontypool. Community includes Cwmavon, Garndiffaith, Pentwyn, Talywain, Varteg.', lat: 51.724084, lng: -3.0629 },
+  { id: 'snatchwood', town: 'pontypool', group: 'pontypool-north', name: 'Snatchwood', note: 'Small suburb between Abersychan and Pontnewynydd.', lat: 51.718, lng: -3.059 },
+  { id: 'cwmffrwdoer', town: 'pontypool', group: 'pontypool-north', name: 'Cwmffrwdoer', note: 'Hamlet near Pontnewynydd.', lat: 51.7115, lng: -3.0640 },
+  { id: 'pontnewynydd', town: 'pontypool', group: 'pontypool-north', name: 'Pontnewynydd', note: 'NW of Pontypool — NOT Pontnewydd (Cwmbran)!', lat: 51.7108365, lng: -3.065668 },
+  { id: 'trevethin', town: 'pontypool', group: 'pontypool-north', name: 'Trevethin', note: 'Hillside NE of Pontypool — historic parish.', lat: 51.711419, lng: -3.0426889 },
+
+  // PONTYPOOL TOWN
+  { id: 'wainfelin', town: 'pontypool', group: 'pontypool-town', name: 'Wainfelin', note: 'Northern part of Pontypool town.', lat: 51.7061643, lng: -3.0496167 },
+  { id: 'penygarn', town: 'pontypool', group: 'pontypool-town', name: 'Penygarn', note: 'East side, above New Inn.', lat: 51.705836, lng: -3.033677 },
+  { id: 'pontypool-centre', town: 'pontypool', group: 'pontypool-town', name: 'Pontypool town centre', note: 'Civic Centre, market, Pontypool Park.', lat: 51.700369, lng: -3.0452679 },
+  { id: 'tranch', town: 'pontypool', group: 'pontypool-town', name: 'Tranch', note: 'West side of town.', lat: 51.7006702, lng: -3.0548208 },
+  { id: 'cwmynyscoy', town: 'pontypool', group: 'pontypool-town', name: 'Cwmynyscoy', note: 'Small district south-west of the town.', lat: 51.6955, lng: -3.0525 },
+
+  // PONTYPOOL SOUTH
+  { id: 'pontymoile', town: 'pontypool', group: 'pontypool-south', name: 'Pontymoile', note: 'Canal basin just south of the centre.', lat: 51.6928, lng: -3.044 },
+  { id: 'sebastopol', town: 'pontypool', group: 'pontypool-south', name: 'Sebastopol (Panteg)', note: 'Between Griffithstown and Pontymoile.', lat: 51.67789, lng: -3.0290499 },
+  { id: 'griffithstown', town: 'pontypool', group: 'pontypool-south', name: 'Griffithstown', note: 'South of Pontypool, north of New Inn.', lat: 51.686096, lng: -3.0290429 },
+  { id: 'new-inn', town: 'pontypool', group: 'pontypool-south', name: 'New Inn', note: 'Railway station ("Pontypool & New Inn") is here.', lat: 51.690116, lng: -3.009919 },
+
+  // CWMBRAN N
+  { id: 'pontnewydd', town: 'cwmbran', group: 'cwmbran-n', name: 'Pontnewydd', note: 'North Cwmbran — NOT Pontnewynydd (Pontypool)!', lat: 51.6682984, lng: -3.0244219 },
+  { id: 'pontrhydyrun', town: 'cwmbran', group: 'cwmbran-n', name: 'Pontrhydyrun', note: 'Between Pontnewydd and Sebastopol.', lat: 51.6680801, lng: -3.0200918 },
+  { id: 'upper-cwmbran', town: 'cwmbran', group: 'cwmbran-n', name: 'Upper Cwmbran', note: 'Hillside area NW of town.', lat: 51.6703636, lng: -3.0465772 },
+
+  // CWMBRAN E
+  { id: 'croesyceiliog', town: 'cwmbran', group: 'cwmbran-e', name: 'Croesyceiliog', note: 'NE Cwmbran — major neighbourhood, school cluster.', lat: 51.660126, lng: -3.006269 },
+  { id: 'llanyrafon', town: 'cwmbran', group: 'cwmbran-e', name: 'Llanyrafon (Llanyravon)', note: 'East Cwmbran — historic mill.', lat: 51.6476527, lng: -3.0057568 },
+
+  // CWMBRAN SE
+  { id: 'old-cwmbran', town: 'cwmbran', group: 'cwmbran-se', name: 'Old Cwmbran', note: 'Original village core before the new town.', lat: 51.6479834, lng: -3.0236263 },
+  { id: 'cwmbran-centre', town: 'cwmbran', group: 'cwmbran-se', name: 'Cwmbran town centre', note: 'Shopping centre, bus station, rail station.', lat: 51.6496546, lng: -3.0317889 },
+  { id: 'oakfield', town: 'cwmbran', group: 'cwmbran-se', name: 'Oakfield', note: 'SE Cwmbran near Llantarnam.', lat: 51.6402074, lng: -3.0151033 },
+  { id: 'llantarnam', town: 'cwmbran', group: 'cwmbran-se', name: 'Llantarnam', note: 'Southernmost — abbey & conservation area. Gateway to Newport.', lat: 51.62895, lng: -3.0170249 },
+
+  // CWMBRAN W
+  { id: 'thornhill', town: 'cwmbran', group: 'cwmbran-w', name: 'Thornhill', note: 'Western hillside neighbourhood.', lat: 51.6571373, lng: -3.048263 },
+  { id: 'greenmeadow', town: 'cwmbran', group: 'cwmbran-w', name: 'Greenmeadow', note: 'West Cwmbran — Greenmeadow Community Farm.', lat: 51.6508619, lng: -3.045457 },
+  { id: 'st-dials', town: 'cwmbran', group: 'cwmbran-w', name: 'St Dials', note: 'West, near Old Cwmbran.', lat: 51.6482196, lng: -3.0363286 },
+  { id: 'fairwater', town: 'cwmbran', group: 'cwmbran-w', name: 'Fairwater', note: 'West Cwmbran neighbourhood.', lat: 51.6444125, lng: -3.0441652 },
+
+  // CWMBRAN SW
+  { id: 'henllys', town: 'cwmbran', group: 'cwmbran-sw', name: 'Henllys', note: 'Western edge — own community council.', lat: 51.6363529, lng: -3.0595134 },
+  { id: 'ty-canol', town: 'cwmbran', group: 'cwmbran-sw', name: 'Ty Canol', note: 'West Cwmbran near Henllys.', lat: 51.645025, lng: -3.0578974 },
+  { id: 'coed-eva', town: 'cwmbran', group: 'cwmbran-sw', name: 'Coed Eva', note: 'SW Cwmbran (includes Two Locks zone).', lat: 51.6380634, lng: -3.0459928 },
+  { id: 'two-locks', town: 'cwmbran', group: 'cwmbran-sw', name: 'Two Locks', note: 'Named after the canal locks. Adjoins Hollybush.', lat: 51.6431237, lng: -3.0295133 },
+  { id: 'hollybush', town: 'cwmbran', group: 'cwmbran-sw', name: 'Hollybush', note: 'South Cwmbran — adjacent to Two Locks.', lat: 51.6377064, lng: -3.0351828 },
+
+  // CWMBRAN LANDMARKS
+  { id: 'cwmbran-police', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Police Station', note: 'Gwent Police station, central Cwmbran.', lat: 51.6514219, lng: -3.021782 },
+  { id: 'grange-main', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Grange Hospital — Main Entrance', note: 'Llanfrechfa — main hospital entrance.', lat: 51.64846565003974, lng: -2.996784595810235 },
+  { id: 'grange-ae', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Grange Hospital — A&E', note: 'Accident & Emergency entrance.', lat: 51.650054783870296, lng: -2.996331633494131 },
+  { id: 'grange-children-ae', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Grange Hospital — Children\'s A&E', note: 'Children\'s Accident & Emergency entrance.', lat: 51.650082, lng: -2.997068 },
+  { id: 'cwmbran-village-surgery', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Village Surgery', note: 'GP surgery, central Cwmbran.', lat: 51.6483431, lng: -3.0233055 },
+  { id: 'cwmbran-fire-station', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Fire Station', note: 'South Wales Fire & Rescue.', lat: 51.6442288, lng: -3.0256873 },
+  { id: 'aldi-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Aldi', note: 'Supermarket, central Cwmbran.', lat: 51.655479, lng: -3.026623 },
+  { id: 'asda-bus-stop', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Asda — Bus Stop Pickup', note: 'Passenger pickup point at Asda.', lat: 51.654105, lng: -3.023952 },
+  { id: 'primark-pickup', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Primark — Passenger Pickup', note: 'Pickup point at Primark.', lat: 51.653508, lng: -3.023340 },
+  { id: 'wetherspoons-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Wetherspoons (Bush Inn)', note: 'Pub & passenger pickup point.', lat: 51.6554756, lng: -3.0206931 },
+  { id: 'mcdonalds-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'McDonald\'s Cwmbran — Drop/Pickup', note: 'Drop-off and pickup point.', lat: 51.655185, lng: -3.021218 },
+  { id: 'vue-cinema', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Vue Cinema — Drop/Pickup', note: 'Cinema drop-off and pickup point.', lat: 51.654314, lng: -3.020030 },
+  { id: 'lloyds-bank-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Lloyds Bank — Drop/Pickup', note: 'Drop-off and pickup point.', lat: 51.654761, lng: -3.020394 },
+  { id: 'morrisons-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Morrisons — Drop/Pickup', note: 'Supermarket drop-off and pickup.', lat: 51.655124, lng: -3.017230 },
+  { id: 'coleg-gwent', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Coleg Gwent — Drop/Pickup', note: 'College drop-off and pickup point.', lat: 51.654673, lng: -3.017442 },
+  { id: 'meritor-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Meritor — Drop/Pickup', note: 'Workplace drop-off and pickup point.', lat: 51.651309, lng: -3.018184 },
+  { id: 'parkway-staff', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Parkway Hotel — Staff Entrance', note: 'Staff entrance, southern Cwmbran.', lat: 51.632439388647335, lng: -3.017231894378185 },
+  { id: 'parkway-main', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Parkway Hotel — Main Entrance', note: 'Main hotel entrance.', lat: 51.63202984138205, lng: -3.017671782410145 },
+  { id: 'crows-nest', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Crow\'s Nest', note: 'Pub, Llanyrafon area.', lat: 51.6454572, lng: -3.0066329 },
+  { id: 'llanyrafon-social', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llanyrafon Social Club', note: 'Social club in Llanyrafon.', lat: 51.646523, lng: -3.009376 },
+  { id: 'llanyrafon-skatepark', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llanyrafon Skatepark', note: 'Skatepark in Llanyrafon.', lat: 51.646700, lng: -3.011348 },
+  { id: 'cwmbran-train-station', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Train Station', note: 'Mainline rail station for Cwmbran.', lat: 51.65716039303069, lng: -3.0161606966385817 },
+
+  // PONTYPOOL LANDMARKS
+  { id: 'pontypool-station-old', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool & New Inn Station — Old Entrance', note: 'Original entrance to the rail station.', lat: 51.696892, lng: -3.013686 },
+  { id: 'pontypool-station-new', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool & New Inn Station — New Entrance', note: 'New entrance to the rail station.', lat: 51.69770221678581, lng: -3.013481255740125 },
+  { id: 'panteg-cemetery', town: 'pontypool', group: 'pontypool-landmarks', name: 'Panteg Cemetery — Entrance', note: 'Cemetery entrance, New Inn.', lat: 51.697957, lng: -3.020638 },
+  { id: 'rowan-ward', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — Rowan Ward', note: 'Rowan Ward, Griffithstown.', lat: 51.690755, lng: -3.025321 },
+  { id: 'county-hospital-main', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — Main Entrance', note: 'Main entrance, Griffithstown.', lat: 51.68967003915936, lng: -3.0260609794915236 },
+  { id: 'county-hospital-2nd', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — 2nd Entrance', note: 'Second entrance, Griffithstown.', lat: 51.693425, lng: -3.028282 },
+  { id: 'talygarn-ward', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — Talygarn Ward', note: 'Talygarn Ward entrance.', lat: 51.692007, lng: -3.026963 },
+  { id: 'cedar-ward', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — Cedar Ward', note: 'Cedar Ward entrance.', lat: 51.690783, lng: -3.025603 },
+  { id: 'harvester-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Harvester — Service Roundabout', note: 'Restaurant at the service roundabout.', lat: 51.694392, lng: -3.022632 },
+  { id: 'premier-inn-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Premier Inn — Service Roundabout', note: 'Hotel at the service roundabout.', lat: 51.694684, lng: -3.023199 },
+  { id: 'mcdonalds-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'McDonald\'s — Service Roundabout', note: 'Restaurant at the service roundabout.', lat: 51.693181, lng: -3.020666 },
+  { id: 'best-western-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Best Western — Service Roundabout', note: 'Hotel at the service roundabout.', lat: 51.691926, lng: -3.021469 },
+  { id: 'open-hearth', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Open Hearth Pub', note: 'Canal-side pub in Griffithstown.', lat: 51.681454, lng: -3.023244 },
+
+  // CWMBRAN PUBS
+  { id: 'pub-greenhouse', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Greenhouse (Pub)', note: 'Large family pub on Newport Rd, near Llantarnam.', lat: 51.6327428, lng: -3.0036718 },
+  { id: 'pub-bush-inn-upper', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Bush Inn (Upper Cwmbran)', note: 'Hillside pub in Upper Cwmbran with valley views.', lat: 51.6652523, lng: -3.0495483 },
+  { id: 'pub-blinkin-owl', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Blinkin Owl (Pub)', note: 'Pub on Henllys Way, Fairwater area.', lat: 51.6383497, lng: -3.0424404 },
+  { id: 'pub-upper-cock', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Upper Cock (Pub)', note: 'Gastropub on The Highway, Croesyceiliog.', lat: 51.6613226, lng: -3.0041116 },
+  { id: 'pub-mount-pleasant', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Mount Pleasant Inn (Pub)', note: 'Pub on Stryd Wesley, near Old Cwmbran.', lat: 51.6478785, lng: -3.026286 },
+  { id: 'pub-dorallt', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Dorallt Inn (Pub)', note: 'Village pub in Henllys.', lat: 51.6398112, lng: -3.0613178 },
+  { id: 'pub-three-blackbirds', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Three Blackbirds Inn (Pub)', note: 'Pub on Pentre Lane, southern Cwmbran.', lat: 51.6265792, lng: -3.0099481 },
+  { id: 'pub-castell-y-bwch', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Castell-y-bwch Inn (Pub)', note: 'Country gastropub on the western edge.', lat: 51.6269921, lng: -3.0507392 },
+  { id: 'pub-cwrt-henllys', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwrt Henllys Hotel (Pub)', note: 'Pub-restaurant with rooms, Henllys village.', lat: 51.6401974, lng: -3.0609959 },
+  { id: 'pub-six-in-hand', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Six In Hand (Pub)', note: 'Local pub in Croesyceiliog.', lat: 51.6630396, lng: -3.0098408 },
+
+  // PONTYPOOL PUBS
+  { id: 'pub-horse-jockey', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Horse & Jockey (Pub)', note: 'Country pub on Usk Rd, near New Inn.', lat: 51.7041817, lng: -3.0116165 },
+  { id: 'pub-unicorn', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Unicorn (Pub)', note: 'Pub on Albion Rd, Pontypool town.', lat: 51.6988988, lng: -3.0414158 },
+  { id: 'pub-little-crown', town: 'pontypool', group: 'pontypool-landmarks', name: 'Little Crown Inn (Pub)', note: 'Pub on Elled Rd, Wainfelin.', lat: 51.7087459, lng: -3.0521983 },
+  { id: 'pub-wain-y-clare', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Wain-Y-Clare (Pub)', note: 'Pub on Usk Rd, Penperlleni / near Mamhilad.', lat: 51.7135357, lng: -3.0002064 },
+  { id: 'pub-unicorn-inn', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Unicorn Inn (Pub)', note: 'Pub on Cwmynyscoy Rd, south of town.', lat: 51.6928273, lng: -3.0378324 },
+  { id: 'pub-iron-duke', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Iron Duke (Pub)', note: 'Pub on Osborne Rd, Pontypool town (former Wetherspoons).', lat: 51.7040587, lng: -3.0423653 },
+  { id: 'pub-star-mamhilad', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Star Inn, Mamhilad (Pub)', note: 'Country pub on Old Abergavenny Rd.', lat: 51.7249813, lng: -3.0074912 },
+  { id: 'pub-rising-sun', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Rising Sun Inn (Pub)', note: 'Pub on Cwmavon Rd, Abersychan.', lat: 51.7323542, lng: -3.058877 },
+  { id: 'pub-white-hart-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'White Hart Hotel (Pub)', note: 'Pub on George St, central Pontypool.', lat: 51.7041418, lng: -3.0432665 },
+  { id: 'pub-twyn-y-ffrwd', town: 'pontypool', group: 'pontypool-landmarks', name: 'Twyn Y Ffrwd Inn (Pub)', note: 'Family pub on Ffrwd Rd, Abersychan.', lat: 51.7284602, lng: -3.0578417 },
+  { id: 'pub-globe-talywain', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Globe (Pub)', note: 'Local pub on Commercial Rd, Talywain.', lat: 51.7322546, lng: -3.0731463 },
+  { id: 'pub-white-hart-abersychan', town: 'pontypool', group: 'pontypool-landmarks', name: 'The White Hart (Abersychan)', note: 'Pub on Broad St, Abersychan.', lat: 51.7238016, lng: -3.0587 },
+  { id: 'pub-garn-workmens', town: 'pontypool', group: 'pontypool-landmarks', name: 'Garn Workmen\'s (Club)', note: 'Workmen\'s club on Herbert\'s Rd, Garndiffaith.', lat: 51.7378923, lng: -3.0704105 },
+
+  // BLAENAVON PUBS
+  { id: 'pub-riflemans-arms', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Rifleman\'s Arms (Pub)', note: 'Pub on Rifle St, Blaenavon.', lat: 51.7787739, lng: -3.0847603 },
+  { id: 'pub-castle-hotel-blaenavon', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Castle Hotel (Pub)', note: 'Pub on Broad St, central Blaenavon.', lat: 51.7727296, lng: -3.0845082 },
+  { id: 'pub-queen-victoria-inn', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Queen Victoria Inn (Pub)', note: 'Pub on Prince St, Blaenavon.', lat: 51.7719297, lng: -3.0855542 },
+  { id: 'pub-whistle-inn', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'The Whistle Inn (Pub)', note: 'Pub & campsite, Garn-yr-erw, near heritage railway.', lat: 51.7841602, lng: -3.1196451 },
+  { id: 'pub-cellar-blaenavon', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'The Cellar (Bar)', note: 'Sports bar on Broad St, Blaenavon.', lat: 51.7741536, lng: -3.0837893 },
+
+  // CWMBRAN WORKINGMEN'S / SOCIAL CLUBS
+  { id: 'club-cwmbran-wmc', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Working Men\'s Band Club', note: 'Workingmen\'s Club on Oldbury Rd, central Cwmbran.', lat: 51.6452009, lng: -3.0193388 },
+  { id: 'club-pontnewydd-wmc', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Pontnewydd Workingmen\'s Club', note: 'Workingmen\'s Club on Chapel St, Pontnewydd.', lat: 51.657791, lng: -3.026518 },
+  { id: 'club-st-josephs', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'St Joseph\'s Social Club', note: 'Social Club on Blenheim Rd, St Dials.', lat: 51.649234, lng: -3.0385717 },
+  { id: 'club-cwmbran-celtic', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Celtic Sports & Social Club', note: 'Sports & social club on Oak St, near Old Cwmbran.', lat: 51.6470836, lng: -3.0247382 },
+  { id: 'club-croesyceiliog-cricket', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Croesyceiliog Cricket & Rugby Club', note: 'Sports & social club on The Highway, Croesyceiliog.', lat: 51.6618706, lng: -3.0044683 },
+  { id: 'club-croesyceiliog-bowls', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Croesyceiliog Bowls Club', note: 'Bowls club on Woodland Rd, Croesyceiliog.', lat: 51.6577017, lng: -3.0123204 },
+
+  // PONTYPOOL WORKINGMEN'S / SOCIAL CLUBS
+  { id: 'club-pontypool-wmc', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Working Men\'s Club', note: 'Workingmen\'s Club on Top Broadway, central Pontypool.', lat: 51.7006038, lng: -3.0437319 },
+  { id: 'club-pontnewynydd-ssc', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontnewynydd Sports & Social Club', note: 'Sports & social club on Mill Rd, Pontnewynydd.', lat: 51.7108017, lng: -3.0488492 },
+  { id: 'club-sebastopol-social', town: 'pontypool', group: 'pontypool-landmarks', name: 'Sebastopol Social Club', note: 'Social club on Wern Rd, Sebastopol.', lat: 51.6797513, lng: -3.0218637 },
+  { id: 'club-greenlawn-social', town: 'pontypool', group: 'pontypool-landmarks', name: 'Greenlawn Social Club', note: 'Social club on The Highway, New Inn.', lat: 51.6906398, lng: -3.0109009 },
+  { id: 'club-pilcs', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pilcs Club', note: 'Sports & social club on New Rd, New Inn.', lat: 51.688494, lng: -3.0189922 },
+
+  // BLAENAVON WORKINGMEN'S CLUBS
+  { id: 'club-blaenavon-workmens-hall', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Blaenavon Workmen\'s Hall', note: 'Historic workmen\'s hall & cinema on High St, Blaenavon.', lat: 51.7733152, lng: -3.0857847 },
+  { id: 'club-elgam-wmc', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Elgam & District Working Men\'s Club', note: 'Workingmen\'s club on Rifle St, Blaenavon.', lat: 51.7789702, lng: -3.0843922 },
+];
+
+const areaBoundaries = {
+  'blaenavon-centre': [[51.770722,-3.081263],[51.773875,-3.081263],[51.775452,-3.085656],[51.773875,-3.090048],[51.770722,-3.090048],[51.769145,-3.085656]],
+  'forgeside': [[51.76996,-3.090924],[51.773114,-3.090924],[51.77469,-3.095317],[51.773114,-3.09971],[51.76996,-3.09971],[51.768384,-3.095317]],
+  'garn-yr-erw': [[51.781585,-3.1059],[51.784738,-3.1059],[51.786315,-3.110293],[51.784738,-3.114686],[51.781585,-3.114686],[51.780008,-3.110293]],
+  'cwmavon': [[51.748179,-3.055773],[51.751332,-3.055773],[51.752908,-3.060166],[51.751332,-3.064559],[51.748179,-3.064559],[51.746602,-3.060166]],
+  'varteg': [[51.745118,-3.059917],[51.748271,-3.059917],[51.749848,-3.06431],[51.748271,-3.068703],[51.745118,-3.068703],[51.743542,-3.06431]],
+  'talywain': [[51.728947,-3.067164],[51.732101,-3.067164],[51.733677,-3.071557],[51.732101,-3.07595],[51.728947,-3.07595],[51.727371,-3.071557]],
+  'garndiffaith': [[51.721112,-3.052521],[51.724265,-3.052521],[51.725841,-3.056914],[51.724265,-3.061307],[51.721112,-3.061307],[51.719535,-3.056914]],
+  'pentwyn': [[51.722823,-3.061907],[51.725977,-3.061907],[51.727553,-3.0663],[51.725977,-3.070693],[51.722823,-3.070693],[51.721247,-3.0663]],
+  'abersychan': [[51.722507,-3.058507],[51.725661,-3.058507],[51.727237,-3.0629],[51.725661,-3.067293],[51.722507,-3.067293],[51.720931,-3.0629]],
+  'snatchwood': [[51.716423,-3.054607],[51.719577,-3.054607],[51.721153,-3.059],[51.719577,-3.063393],[51.716423,-3.063393],[51.714847,-3.059]],
+  'cwmffrwdoer': [[51.709923,-3.059607],[51.713077,-3.059607],[51.714653,-3.064],[51.713077,-3.068393],[51.709923,-3.068393],[51.708347,-3.064]],
+  'pontnewynydd': [[51.70926,-3.061275],[51.712413,-3.061275],[51.71399,-3.065668],[51.712413,-3.070061],[51.70926,-3.070061],[51.707683,-3.065668]],
+  'trevethin': [[51.709842,-3.038296],[51.712996,-3.038296],[51.714572,-3.042689],[51.712996,-3.047082],[51.709842,-3.047082],[51.708266,-3.042689]],
+  'wainfelin': [[51.704588,-3.045224],[51.707741,-3.045224],[51.709317,-3.049617],[51.707741,-3.05401],[51.704588,-3.05401],[51.703011,-3.049617]],
+  'penygarn': [[51.704259,-3.029284],[51.707413,-3.029284],[51.708989,-3.033677],[51.707413,-3.03807],[51.704259,-3.03807],[51.702683,-3.033677]],
+  'pontypool-centre': [[51.698792,-3.040875],[51.701946,-3.040875],[51.703522,-3.045268],[51.701946,-3.049661],[51.698792,-3.049661],[51.697216,-3.045268]],
+  'tranch': [[51.699094,-3.050428],[51.702247,-3.050428],[51.703823,-3.054821],[51.702247,-3.059214],[51.699094,-3.059214],[51.697517,-3.054821]],
+  'cwmynyscoy': [[51.693923,-3.048107],[51.697077,-3.048107],[51.698653,-3.0525],[51.697077,-3.056893],[51.693923,-3.056893],[51.692347,-3.0525]],
+  'pontymoile': [[51.691223,-3.039607],[51.694377,-3.039607],[51.695953,-3.044],[51.694377,-3.048393],[51.691223,-3.048393],[51.689647,-3.044]],
+  'sebastopol': [[51.676313,-3.024657],[51.679467,-3.024657],[51.681043,-3.02905],[51.679467,-3.033443],[51.676313,-3.033443],[51.674737,-3.02905]],
+  'griffithstown': [[51.684519,-3.02465],[51.687673,-3.02465],[51.689249,-3.029043],[51.687673,-3.033436],[51.684519,-3.033436],[51.682943,-3.029043]],
+  'new-inn': [[51.688539,-3.005526],[51.691693,-3.005526],[51.693269,-3.009919],[51.691693,-3.014312],[51.688539,-3.014312],[51.686963,-3.009919]],
+  'pontnewydd': [[51.666722,-3.020029],[51.669875,-3.020029],[51.671452,-3.024422],[51.669875,-3.028815],[51.666722,-3.028815],[51.665145,-3.024422]],
+  'pontrhydyrun': [[51.666504,-3.015699],[51.669657,-3.015699],[51.671233,-3.020092],[51.669657,-3.024485],[51.666504,-3.024485],[51.664927,-3.020092]],
+  'upper-cwmbran': [[51.668787,-3.042184],[51.67194,-3.042184],[51.673517,-3.046577],[51.67194,-3.05097],[51.668787,-3.05097],[51.66721,-3.046577]],
+  'croesyceiliog': [[51.658549,-3.001876],[51.661703,-3.001876],[51.663279,-3.006269],[51.661703,-3.010662],[51.658549,-3.010662],[51.656973,-3.006269]],
+  'llanyrafon': [[51.646076,-3.001364],[51.649229,-3.001364],[51.650806,-3.005757],[51.649229,-3.01015],[51.646076,-3.01015],[51.6445,-3.005757]],
+  'old-cwmbran': [[51.646407,-3.019233],[51.64956,-3.019233],[51.651137,-3.023626],[51.64956,-3.028019],[51.646407,-3.028019],[51.64483,-3.023626]],
+  'cwmbran-centre': [[51.648078,-3.027396],[51.651231,-3.027396],[51.652808,-3.031789],[51.651231,-3.036182],[51.648078,-3.036182],[51.646501,-3.031789]],
+  'oakfield': [[51.638631,-3.01071],[51.641784,-3.01071],[51.643361,-3.015103],[51.641784,-3.019496],[51.638631,-3.019496],[51.637054,-3.015103]],
+  'llantarnam': [[51.627373,-3.012632],[51.630527,-3.012632],[51.632103,-3.017025],[51.630527,-3.021418],[51.627373,-3.021418],[51.625797,-3.017025]],
+  'thornhill': [[51.655561,-3.04387],[51.658714,-3.04387],[51.66029,-3.048263],[51.658714,-3.052656],[51.655561,-3.052656],[51.653984,-3.048263]],
+  'greenmeadow': [[51.649285,-3.041064],[51.652438,-3.041064],[51.654015,-3.045457],[51.652438,-3.04985],[51.649285,-3.04985],[51.647709,-3.045457]],
+  'st-dials': [[51.646643,-3.031936],[51.649796,-3.031936],[51.651373,-3.036329],[51.649796,-3.040721],[51.646643,-3.040721],[51.645066,-3.036329]],
+  'fairwater': [[51.642836,-3.039772],[51.645989,-3.039772],[51.647566,-3.044165],[51.645989,-3.048558],[51.642836,-3.048558],[51.641259,-3.044165]],
+  'henllys': [[51.634776,-3.055121],[51.637929,-3.055121],[51.639506,-3.059513],[51.637929,-3.063906],[51.634776,-3.063906],[51.6332,-3.059513]],
+  'ty-canol': [[51.643448,-3.053505],[51.646602,-3.053505],[51.648178,-3.057897],[51.646602,-3.06229],[51.643448,-3.06229],[51.641872,-3.057897]],
+  'coed-eva': [[51.636487,-3.0416],[51.63964,-3.0416],[51.641217,-3.045993],[51.63964,-3.050386],[51.636487,-3.050386],[51.63491,-3.045993]],
+  'two-locks': [[51.641547,-3.02512],[51.6447,-3.02512],[51.646277,-3.029513],[51.6447,-3.033906],[51.641547,-3.033906],[51.639971,-3.029513]],
+  'hollybush': [[51.63613,-3.03079],[51.639283,-3.03079],[51.64086,-3.035183],[51.639283,-3.039576],[51.63613,-3.039576],[51.634553,-3.035183]],
+};
+
+const colors = {
+  blaenavon: '#d946ef',
+  pontypool: '#f0abfc',
+  cwmbran:   '#8b5cf6'
+};
+
+// ============ MAP ============
+const map = L.map('map', {
+  zoomControl: true,
+  scrollWheelZoom: false
+}).setView([51.70, -3.05], 11);
+
+// Enable scroll-zoom on click, disable when clicking outside the map
+map.on('click', () => {
+  map.scrollWheelZoom.enable();
+  document.getElementById('map').classList.add('map-active');
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#map')) {
+    map.scrollWheelZoom.disable();
+    document.getElementById('map').classList.remove('map-active');
+  }
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors',
+  maxZoom: 18,
+}).addTo(map);
+
+const markers = {};
+
+areas.forEach(area => {
+  const color = colors[area.town];
+  const isLandmark = area.group && area.group.includes('landmarks');
+  const markerClass = isLandmark ? 'custom-marker landmark' : 'custom-marker';
+  const icon = L.divIcon({
+    className: '',
+    html: `<div class="${markerClass}" data-id="${area.id}" style="width:14px;height:14px;background:${color};margin:11px;"></div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
+  });
+  const marker = L.marker([area.lat, area.lng], { icon }).addTo(map);
+  marker.bindPopup(`<strong>${area.name}</strong>${area.note}`, {
+    autoPan: true,
+    autoPanPadding: [30, 30]
+  });
+  marker.on('click', () => activateArea(area.id));
+  markers[area.id] = marker;
+});
+
+// ============ RENDER LISTS ============
+// Smart categoriser — assigns each area to ONE category based on its name/note
+function getAreaCategory(area) {
+  const isLandmark = area.group && area.group.includes('landmarks');
+  if (!isLandmark) return 'areas';
+
+  const text = (area.name + ' ' + area.note).toLowerCase();
+
+  // Order matters: more specific matches first
+  if (/hospital|a&e|ward|surgery/.test(text)) return 'medical';
+  if (/police|fire station|fire & rescue/.test(text)) return 'emergency';
+  if (/\bstation\b|train|rail/.test(text)) return 'stations';
+  if (/aldi|asda|morrisons|primark|tesco|sainsbury|lidl|supermarket/.test(text)) return 'shops';
+  if (/hotel|premier inn|best western|parkway/.test(text)) return 'hotels';
+  if (/mcdonald|harvester|restaurant|kfc|burger king|nando/.test(text)) return 'food';
+  if (/cinema|vue|odeon/.test(text)) return 'entertainment';
+  if (/college|school|coleg/.test(text)) return 'education';
+  if (/bank|lloyds|barclays|hsbc|natwest/.test(text)) return 'banks';
+  if (/cemetery/.test(text)) return 'other';
+  if (/skatepark|park/.test(text)) return 'parks';
+  if (/\(pub\)|\(bar\)|wetherspoon|open hearth|crow.s nest/.test(text)) return 'pubs';
+  if (/\(club\)|workmen|social club|sports & social/.test(text)) return 'clubs';
+  if (/pickup|drop|drop\/pickup/.test(text)) return 'pickups';
+  if (/meritor/.test(text)) return 'pickups';
+
+  return 'other';
+}
+
+// Category metadata — defines display order, label, and icon
+const categoryConfig = [
+  { id: 'areas',         label: 'Areas & Villages',   icon: '◉' },
+  { id: 'emergency',     label: 'Emergency Services', icon: '✦' },
+  { id: 'medical',       label: 'Hospitals & GPs',    icon: '✚' },
+  { id: 'pubs',          label: 'Pubs & Bars',        icon: '♛' },
+  { id: 'clubs',         label: 'Clubs',              icon: '♟' },
+  { id: 'shops',         label: 'Supermarkets & Shops', icon: '⬢' },
+  { id: 'hotels',        label: 'Hotels',             icon: '⬟' },
+  { id: 'food',          label: 'Restaurants & Food', icon: '◆' },
+  { id: 'stations',      label: 'Train Stations',     icon: '➤' },
+  { id: 'education',     label: 'Schools & College',  icon: '✎' },
+  { id: 'banks',         label: 'Banks',              icon: '£' },
+  { id: 'entertainment', label: 'Entertainment',      icon: '★' },
+  { id: 'parks',         label: 'Parks & Recreation', icon: '♣' },
+  { id: 'pickups',       label: 'Pickup / Drop-off Points', icon: '⊕' },
+  { id: 'other',         label: 'Other Landmarks',    icon: '·' },
+];
+
+function renderAreas() {
+  // Group all areas by town, then by category
+  const towns = ['blaenavon', 'pontypool', 'cwmbran'];
+
+  towns.forEach(townId => {
+    const container = document.querySelector(`.town-categories[data-town-id="${townId}"]`);
+    if (!container) return;
+
+    // Collect areas for this town, organised by category
+    const byCategory = {};
+    areas.forEach(a => {
+      if (a.town !== townId) return;
+      const cat = getAreaCategory(a);
+      if (!byCategory[cat]) byCategory[cat] = [];
+      byCategory[cat].push(a);
+    });
+
+    // Render in the configured order
+    let html = '';
+    categoryConfig.forEach(catCfg => {
+      const items = byCategory[catCfg.id];
+      if (!items || items.length === 0) return;
+
+      // Sort areas alphabetically by name within each category
+      items.sort((a, b) => a.name.localeCompare(b.name));
+
+      html += `
+        <div class="area-group">
+          <h3><span class="cat-icon">${catCfg.icon}</span> ${catCfg.label} <span class="cat-count">${items.length}</span></h3>
+          <ul class="area-list">
+            ${items.map(a => `
+              <li class="area-item" data-id="${a.id}">
+                <div>
+                  <div class="area-name">${a.name}</div>
+                  <div class="area-note">${a.note}</div>
+                </div>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  });
+
+  // Wire up click handlers
+  document.querySelectorAll('.area-item').forEach(item => {
+    item.addEventListener('click', () => activateArea(item.dataset.id));
+  });
+}
+
+// ============ ACTIVATE ============
+let activeId = null;
+
+function activateArea(id) {
+  // Deactivate previous
+  document.querySelectorAll('.area-item.active').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.custom-marker.active').forEach(el => el.classList.remove('active'));
+
+  if (activeId === id) {
+    activeId = null;
+    return;
+  }
+
+  activeId = id;
+  const area = areas.find(a => a.id === id);
+  if (!area) return;
+
+  // Highlight list item
+  const item = document.querySelector(`.area-item[data-id="${id}"]`);
+  if (item) {
+    item.classList.add('active');
+    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // Highlight marker
+  const markerEl = document.querySelector(`.custom-marker[data-id="${id}"]`);
+  if (markerEl) markerEl.classList.add('active');
+
+  // Pan map and open popup — keep current zoom if already zoomed in
+  const currentZoom = map.getZoom();
+  const targetZoom = Math.max(currentZoom, 14);
+  map.flyTo([area.lat, area.lng], targetZoom, { duration: 0.8 });
+  markers[id].openPopup();
+}
+
+// Init
+renderAreas();
+
+// ============ SEARCH ============
+
+// Calculate edit distance (Levenshtein) between two strings — used for fuzzy typo matching
+function editDistance(a, b) {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitute
+          matrix[i][j - 1] + 1,     // insert
+          matrix[i - 1][j] + 1      // delete
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+// Returns true if `needle` fuzzily appears within `haystack`.
+// Tolerates 1 typo for short words, 2 typos for longer words.
+function fuzzyContains(haystack, needle) {
+  if (haystack.includes(needle)) return true;
+  if (needle.length < 4) return false; // too short to safely fuzzy-match
+  const maxDistance = needle.length <= 6 ? 1 : 2;
+  // Check every word in haystack against the needle
+  const words = haystack.split(/[^a-z0-9&]+/);
+  for (const w of words) {
+    if (w.length === 0) continue;
+    // Compare needle to word, and also needle to word-substring of needle's length (rough)
+    if (editDistance(w, needle) <= maxDistance) return true;
+    // Sliding window if word is longer than needle — useful for "hosptal" vs "hospital station"
+    if (w.length > needle.length) {
+      for (let i = 0; i <= w.length - needle.length; i++) {
+        if (editDistance(w.substr(i, needle.length), needle) <= maxDistance) return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Category keywords — maps user search terms to text that should appear in the area name/note
+const categoryMap = {
+  hospital: ['hospital', 'a&e', 'a & e', 'ward', 'surgery', 'grange', 'county'],
+  surgery:  ['surgery', 'gp'],
+  doctor:   ['surgery', 'gp', 'hospital'],
+  gp:       ['surgery', 'gp', 'hospital'],
+  pub:      ['pub', '(pub)', '(bar)', '(club)', 'wetherspoon', 'open hearth', 'crow', 'tavern', 'harvester', 'cellar'],
+  bar:      ['bar', '(bar)', 'pub', 'wetherspoon', 'tavern', 'cellar'],
+  club:     ['club', 'workmen', 'social', 'celtic', 'bowls', 'cricket', 'rugby'],
+  clubs:    ['club', 'workmen', 'social'],
+  workmens: ['workmen', 'workmens'],
+  workmen:  ['workmen', 'workmens'],
+  social:   ['social club', 'workmen', 'social'],
+  restaurant: ['mcdonald', 'harvester', 'restaurant', 'wetherspoon'],
+  food:     ['mcdonald', 'harvester', 'restaurant', 'aldi', 'asda', 'morrisons'],
+  shop:     ['aldi', 'asda', 'morrisons', 'primark', 'shop', 'store', 'lloyds'],
+  shops:    ['aldi', 'asda', 'morrisons', 'primark', 'shop', 'store'],
+  supermarket: ['aldi', 'asda', 'morrisons', 'supermarket'],
+  hotel:    ['hotel', 'parkway', 'premier inn', 'best western'],
+  hotels:   ['hotel', 'parkway', 'premier inn', 'best western'],
+  station:  ['station', 'train'],
+  train:    ['station', 'train'],
+  rail:     ['station', 'train', 'rail'],
+  police:   ['police'],
+  fire:     ['fire station', 'fire'],
+  emergency:['police', 'fire', 'hospital', 'a&e'],
+  school:   ['school', 'college', 'coleg'],
+  college:  ['college', 'coleg'],
+  pickup:   ['pickup', 'pick-up', 'drop'],
+  dropoff:  ['drop', 'pickup'],
+  cinema:   ['cinema', 'vue'],
+  bank:     ['bank', 'lloyds'],
+  cemetery: ['cemetery'],
+  church:   ['church', 'abbey', 'cemetery'],
+  park:     ['park', 'skatepark', 'cemetery'],
+  skatepark:['skatepark'],
+  pharmacy: ['pharmacy', 'chemist'],
+  landmark: ['landmark'],
+  landmarks:['landmark'],
+  area:     [],
+  areas:    [],
+  village:  [],
+  neighbourhood: [],
+  neighborhood: [],
+};
+
+const searchInput = document.getElementById('search-input');
+const searchClear = document.getElementById('search-clear');
+const searchBar = document.querySelector('.search-bar');
+const resultsBox = document.getElementById('search-results');
+
+function searchAreas(rawQuery) {
+  const query = rawQuery.toLowerCase().trim();
+  if (!query) return [];
+
+  // Strip filler phrases — try multiple passes
+  let cleaned = query;
+  const fillers = [
+    /^show me\s+/,
+    /^show\s+/,
+    /^find me\s+/,
+    /^find\s+/,
+    /^list me\s+/,
+    /^list\s+/,
+    /^give me\s+/,
+    /^where (is|are)\s+(the\s+)?/,
+    /^what (is|are)\s+(the\s+)?/,
+    /^all (of )?(the )?/,
+    /^the\s+/,
+    /\s+please\.?$/,
+    /\s+in torfaen$/,
+  ];
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const re of fillers) {
+      if (re.test(cleaned)) {
+        cleaned = cleaned.replace(re, '').trim();
+        changed = true;
+      }
+    }
+  }
+
+  // Split into individual terms (so "all hospitals in cwmbran" matches both)
+  const terms = cleaned.split(/\s+/).filter(t => t.length > 0);
+
+  return areas.filter(area => {
+    const fullHaystack = (area.name + ' ' + area.note + ' ' + area.town + ' ' + area.group).toLowerCase();
+    const nameHaystack = area.name.toLowerCase();
+    const isLandmark = area.group && area.group.includes('landmarks');
+    // Every term must match either directly or via category keywords
+    return terms.every(term => {
+      // Direct match — exact substring first, then fuzzy
+      if (fullHaystack.includes(term)) return true;
+      if (fuzzyContains(fullHaystack, term)) return true;
+      // Category match — only applies to landmarks, since categories like "pub" or "hospital"
+      // don't describe residential areas
+      if (!isLandmark) return false;
+      // Build a list of category variants — exact, singularised, AND fuzzy-matched against known categories
+      const variants = new Set([term]);
+      if (term.endsWith('s') && term.length > 2) variants.add(term.slice(0, -1));
+      if (term.endsWith('es') && term.length > 3) variants.add(term.slice(0, -2));
+      // Find category keys that are fuzzy-matches of the term (handles "hosptal" → "hospital")
+      for (const cat of Object.keys(categoryMap)) {
+        if (cat.length >= 4 && editDistance(cat, term) <= (cat.length <= 6 ? 1 : 2)) {
+          variants.add(cat);
+        }
+      }
+      for (const v of variants) {
+        const keywords = categoryMap[v];
+        if (keywords && keywords.length > 0) {
+          if (keywords.some(kw => nameHaystack.includes(kw))) return true;
+        }
+      }
+      return false;
+    });
+  }).sort((a, b) => {
+    // Sort landmarks first when searching by category
+    const aIsLandmark = a.group && a.group.includes('landmarks');
+    const bIsLandmark = b.group && b.group.includes('landmarks');
+    if (aIsLandmark && !bIsLandmark) return -1;
+    if (!aIsLandmark && bIsLandmark) return 1;
+    return 0;
+  });
+}
+
+function renderSearchResults(query) {
+  if (!query.trim()) {
+    resultsBox.classList.remove('open');
+    resultsBox.innerHTML = '';
+    clearMapFilter();
+    searchBar.classList.remove('has-query');
+    return;
+  }
+
+  searchBar.classList.add('has-query');
+  const matches = searchAreas(query);
+
+  if (matches.length === 0) {
+    resultsBox.classList.add('open');
+    resultsBox.innerHTML = '<div class="search-no-results">No matches — try a different word.</div>';
+    applyMapFilter([]);
+    return;
+  }
+
+  const header = `<div class="search-results-header">${matches.length} match${matches.length === 1 ? '' : 'es'}</div>`;
+  const items = matches.map(a => {
+    const isLandmark = a.group && a.group.includes('landmarks');
+    const color = colors[a.town];
+    return `
+      <div class="search-result-item" data-id="${a.id}">
+        <div class="search-result-dot ${isLandmark ? 'landmark' : ''}" style="background:${isLandmark ? '' : color};color:${color};"></div>
+        <div class="search-result-text">
+          <div class="search-result-name">${a.name}</div>
+          <div class="search-result-note">${a.note}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  resultsBox.innerHTML = header + items;
+  resultsBox.classList.add('open');
+
+  // Click result -> activate area
+  resultsBox.querySelectorAll('.search-result-item').forEach(el => {
+    el.addEventListener('click', () => {
+      activateArea(el.dataset.id);
+    });
+  });
+
+  applyMapFilter(matches.map(m => m.id));
+
+  // If only one match, zoom to it; if multiple, fit them all in view
+  if (matches.length === 1) {
+    const a = matches[0];
+    const currentZoom = map.getZoom();
+    map.flyTo([a.lat, a.lng], Math.max(currentZoom, 14), { duration: 0.8 });
+  } else if (matches.length > 1) {
+    const bounds = L.latLngBounds(matches.map(a => [a.lat, a.lng]));
+    map.flyToBounds(bounds, { padding: [60, 60], duration: 0.8, maxZoom: 15 });
+  }
+}
+
+function applyMapFilter(matchIds) {
+  const matchSet = new Set(matchIds);
+  document.querySelectorAll('.custom-marker').forEach(el => {
+    const id = el.dataset.id;
+    if (matchSet.has(id)) {
+      el.classList.remove('dimmed');
+      el.classList.add('search-match');
+    } else {
+      el.classList.add('dimmed');
+      el.classList.remove('search-match');
+    }
+  });
+}
+
+function clearMapFilter() {
+  document.querySelectorAll('.custom-marker').forEach(el => {
+    el.classList.remove('dimmed');
+    el.classList.remove('search-match');
+  });
+}
+
+searchInput.addEventListener('input', e => {
+  renderSearchResults(e.target.value);
+});
+
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  renderSearchResults('');
+  searchInput.focus();
+});
+
+// Pressing Escape clears the search
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    searchInput.value = '';
+    renderSearchResults('');
+    searchInput.blur();
+  }
+});
+
+// ============ EDIT MODE ============
+const editToggle = document.getElementById('edit-toggle');
+const editExport = document.getElementById('edit-export');
+const editReset = document.getElementById('edit-reset');
+const editStatus = document.getElementById('edit-status');
+const mapEl = document.getElementById('map');
+
+let editModeOn = false;
+// Track changes: { areaId: { lat, lng } }
+const edits = {};
+
+function setStatus(msg, hasUpdate = false) {
+  editStatus.innerHTML = msg;
+  if (hasUpdate) editStatus.classList.add('has-update');
+  else editStatus.classList.remove('has-update');
+}
+
+function updateButtonStates() {
+  const hasEdits = Object.keys(edits).length > 0;
+  editExport.disabled = !hasEdits;
+  editReset.disabled = !hasEdits;
+}
+
+function enableDragOnMarker(marker, area) {
+  marker.dragging.enable();
+  marker.off('dragend');
+  marker.on('dragend', () => {
+    const newLatLng = marker.getLatLng();
+    const lat = parseFloat(newLatLng.lat.toFixed(7));
+    const lng = parseFloat(newLatLng.lng.toFixed(7));
+    edits[area.id] = { lat, lng };
+    // Also update the in-memory area object so subsequent searches/clicks use the new location
+    area.lat = lat;
+    area.lng = lng;
+    setStatus(
+      `Moved <strong style="color:var(--ink)">${area.name}</strong> to <code>${lat}, ${lng}</code> · ${Object.keys(edits).length} edit${Object.keys(edits).length === 1 ? '' : 's'} pending`,
+      true
+    );
+    updateButtonStates();
+  });
+}
+
+function disableDragOnMarker(marker) {
+  marker.dragging.disable();
+}
+
+editToggle.addEventListener('click', () => {
+  editModeOn = !editModeOn;
+  editToggle.classList.toggle('active', editModeOn);
+  mapEl.classList.toggle('edit-active', editModeOn);
+
+  if (editModeOn) {
+    editToggle.textContent = '✕ Exit edit mode';
+    setStatus('Edit mode ON — drag any pin to move it. Coordinates update automatically.');
+    // Enable dragging on all markers
+    areas.forEach(area => {
+      const marker = markers[area.id];
+      if (marker) enableDragOnMarker(marker, area);
+    });
+  } else {
+    editToggle.textContent = '✎ Edit mode';
+    areas.forEach(area => {
+      const marker = markers[area.id];
+      if (marker) disableDragOnMarker(marker);
+    });
+    if (Object.keys(edits).length === 0) {
+      setStatus('Edit mode off. Toggle on to drag pins.');
+    } else {
+      setStatus(`Edit mode off — ${Object.keys(edits).length} unsaved change${Object.keys(edits).length === 1 ? '' : 's'}. Export to keep them.`, true);
+    }
+  }
+});
+
+editReset.addEventListener('click', () => {
+  if (!confirm('Reset all pin changes from this session? This cannot be undone.')) return;
+  // Restore original positions
+  Object.keys(edits).forEach(id => {
+    const orig = originalCoords[id];
+    if (!orig) return;
+    const area = areas.find(a => a.id === id);
+    if (area) {
+      area.lat = orig.lat;
+      area.lng = orig.lng;
+      const marker = markers[id];
+      if (marker) marker.setLatLng([orig.lat, orig.lng]);
+    }
+  });
+  for (const k in edits) delete edits[k];
+  setStatus('All changes reset.');
+  updateButtonStates();
+});
+
+editExport.addEventListener('click', () => {
+  // Fetch the current HTML and patch the data array with new coordinates
+  const editsList = Object.entries(edits);
+  if (editsList.length === 0) return;
+
+  // Get the source HTML of this page
+  fetch(window.location.href)
+    .then(r => r.text())
+    .then(html => {
+      let updatedHtml = html;
+      let patched = 0;
+      editsList.forEach(([id, coords]) => {
+        // Match the line for this area id and update lat/lng values
+        // Pattern: { id: 'this-id', ..., lat: NUMBER, lng: NUMBER }
+        const regex = new RegExp(
+          `(\\{\\s*id:\\s*['"]${id.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}['"][^}]*?lat:\\s*)(-?\\d+\\.?\\d*)(,\\s*lng:\\s*)(-?\\d+\\.?\\d*)`,
+          'g'
+        );
+        const before = updatedHtml;
+        updatedHtml = updatedHtml.replace(regex, `$1${coords.lat}$3${coords.lng}`);
+        if (updatedHtml !== before) patched++;
+      });
+
+      if (patched === 0) {
+        setStatus('Could not patch the file — try downloading and editing manually.', true);
+        return;
+      }
+
+      // Trigger download
+      const blob = new Blob([updatedHtml], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'torfaen-knowledge.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setStatus(`✓ Exported updated file with ${patched} pin${patched === 1 ? '' : 's'} moved. Re-upload it to Netlify to publish.`, true);
+    })
+    .catch(err => {
+      console.error(err);
+      setStatus('Export failed — your browser may block fetching the local file. Try opening this page from a web server (or Netlify).', true);
+    });
+});
+
+// Snapshot original coordinates so Reset can restore them
+const originalCoords = {};
+areas.forEach(a => { originalCoords[a.id] = { lat: a.lat, lng: a.lng }; });
+
+// ============ AREA BOUNDARIES ============
+const boundariesToggle = document.getElementById('boundaries-toggle');
+const boundariesEdit = document.getElementById('boundaries-edit');
+
+let boundariesVisible = false;
+let boundariesEditMode = false;
+const polygonLayers = {};  // id -> L.polygon
+const editMarkers = {};    // id -> [L.marker, L.marker, ...] for each vertex
+const boundaryEdits = {};  // id -> updated coordinate array (set when user drags)
+
+// Snapshot original boundaries so Reset can restore them
+const originalBoundaries = {};
+for (const id in areaBoundaries) {
+  originalBoundaries[id] = JSON.parse(JSON.stringify(areaBoundaries[id]));
+}
+
+function getBoundaryColor(id) {
+  const area = areas.find(a => a.id === id);
+  if (!area) return '#8b5cf6';
+  return colors[area.town] || '#8b5cf6';
+}
+
+function renderBoundaries() {
+  // Remove any existing polygon layers
+  for (const id in polygonLayers) {
+    map.removeLayer(polygonLayers[id]);
+  }
+  for (const id in polygonLayers) delete polygonLayers[id];
+
+  // Draw each polygon
+  for (const id in areaBoundaries) {
+    const coords = areaBoundaries[id];
+    const area = areas.find(a => a.id === id);
+    if (!area) continue;
+    const color = getBoundaryColor(id);
+    const polygon = L.polygon(coords, {
+      color: color,
+      weight: 2,
+      opacity: 0.85,
+      fillColor: color,
+      fillOpacity: 0.18,
+      interactive: true
+    }).addTo(map);
+
+    // Label binding — show name on hover
+    polygon.bindTooltip(area.name, {
+      permanent: false,
+      direction: 'center',
+      className: 'boundary-tooltip'
+    });
+
+    // Click to activate the area
+    polygon.on('click', () => {
+      if (!boundariesEditMode) activateArea(id);
+    });
+
+    polygonLayers[id] = polygon;
+  }
+}
+
+function clearBoundaries() {
+  for (const id in polygonLayers) {
+    map.removeLayer(polygonLayers[id]);
+    delete polygonLayers[id];
+  }
+}
+
+function enableBoundaryEditing() {
+  // For each polygon, add draggable markers at each vertex
+  for (const id in polygonLayers) {
+    const coords = areaBoundaries[id];
+    const markers = [];
+    coords.forEach((latLng, idx) => {
+      const handle = L.marker(latLng, {
+        draggable: true,
+        icon: L.divIcon({
+          className: '',
+          html: '<div class="boundary-handle"></div>',
+          iconSize: [14, 14],
+          iconAnchor: [7, 7]
+        })
+      }).addTo(map);
+
+      handle.on('drag', (e) => {
+        const newLatLng = e.target.getLatLng();
+        areaBoundaries[id][idx] = [
+          parseFloat(newLatLng.lat.toFixed(6)),
+          parseFloat(newLatLng.lng.toFixed(6))
+        ];
+        // Update polygon shape live
+        polygonLayers[id].setLatLngs(areaBoundaries[id]);
+      });
+
+      handle.on('dragend', () => {
+        boundaryEdits[id] = JSON.parse(JSON.stringify(areaBoundaries[id]));
+        const area = areas.find(a => a.id === id);
+        setStatus(
+          `Edited boundary of <strong style="color:var(--ink)">${area ? area.name : id}</strong> · ${Object.keys(boundaryEdits).length} boundary edit${Object.keys(boundaryEdits).length === 1 ? '' : 's'} pending`,
+          true
+        );
+        updateButtonStates();
+      });
+
+      markers.push(handle);
+    });
+    editMarkers[id] = markers;
+  }
+}
+
+function disableBoundaryEditing() {
+  for (const id in editMarkers) {
+    editMarkers[id].forEach(m => map.removeLayer(m));
+    delete editMarkers[id];
+  }
+}
+
+boundariesToggle.addEventListener('click', () => {
+  boundariesVisible = !boundariesVisible;
+  boundariesToggle.classList.toggle('active', boundariesVisible);
+  if (boundariesVisible) {
+    boundariesToggle.textContent = '⬡ Hide boundaries';
+    boundariesEdit.disabled = false;
+    renderBoundaries();
+  } else {
+    boundariesToggle.textContent = '⬡ Show boundaries';
+    // Also exit edit mode if it was on
+    if (boundariesEditMode) {
+      boundariesEditMode = false;
+      boundariesEdit.classList.remove('active');
+      boundariesEdit.textContent = '✎ Edit boundaries';
+      disableBoundaryEditing();
+    }
+    boundariesEdit.disabled = true;
+    clearBoundaries();
+  }
+});
+
+boundariesEdit.addEventListener('click', () => {
+  if (!boundariesVisible) return;
+  boundariesEditMode = !boundariesEditMode;
+  boundariesEdit.classList.toggle('active', boundariesEditMode);
+  if (boundariesEditMode) {
+    boundariesEdit.textContent = '✕ Exit boundary editing';
+    setStatus('Boundary edit mode ON — drag the small markers on each polygon corner to reshape areas.');
+    enableBoundaryEditing();
+  } else {
+    boundariesEdit.textContent = '✎ Edit boundaries';
+    disableBoundaryEditing();
+    if (Object.keys(boundaryEdits).length === 0) {
+      setStatus('Boundary edit mode off.');
+    } else {
+      setStatus(`Boundary edit mode off — ${Object.keys(boundaryEdits).length} unsaved boundary edit${Object.keys(boundaryEdits).length === 1 ? '' : 's'}. Export to keep them.`, true);
+    }
+  }
+});
+
+// Patch updateButtonStates to also account for boundary edits
+const _originalUpdate = updateButtonStates;
+updateButtonStates = function() {
+  const hasEdits = Object.keys(edits).length > 0 || Object.keys(boundaryEdits).length > 0;
+  editExport.disabled = !hasEdits;
+  editReset.disabled = !hasEdits;
+};
+
+// Patch the export function: also write updated boundaries back to file
+const _originalExportClick = editExport.onclick;
+editExport.addEventListener('click', () => {
+  // The original handler does the pin patching; we need to additionally patch boundaries
+  // We listen AFTER the original by using a small delay — but cleaner: replace it entirely
+}, { once: false });
+
+// Replace export logic with combined pin + boundary patcher
+editExport.onclick = null;
+// Remove all prior listeners by cloning the button
+const newExport = editExport.cloneNode(true);
+editExport.parentNode.replaceChild(newExport, editExport);
+
+newExport.addEventListener('click', () => {
+  const pinEdits = Object.entries(edits);
+  const boundEdits = Object.entries(boundaryEdits);
+  if (pinEdits.length === 0 && boundEdits.length === 0) return;
+
+  fetch(window.location.href)
+    .then(r => r.text())
+    .then(html => {
+      let updatedHtml = html;
+      let patched = 0;
+
+      // 1) Patch pin coordinates
+      pinEdits.forEach(([id, coords]) => {
+        const regex = new RegExp(
+          `(\\{\\s*id:\\s*['"]${id.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}['"][^}]*?lat:\\s*)(-?\\d+\\.?\\d*)(,\\s*lng:\\s*)(-?\\d+\\.?\\d*)`,
+          'g'
+        );
+        const before = updatedHtml;
+        updatedHtml = updatedHtml.replace(regex, `$1${coords.lat}$3${coords.lng}`);
+        if (updatedHtml !== before) patched++;
+      });
+
+      // 2) Patch boundary polygons
+      boundEdits.forEach(([id, coords]) => {
+        const ptsStr = coords.map(p => `[${p[0]},${p[1]}]`).join(',');
+        const regex = new RegExp(
+          `('${id.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}':\\s*\\[)\\[[^\\]]*\\](?:,\\[[^\\]]*\\])*(\\])`,
+          'g'
+        );
+        const before = updatedHtml;
+        updatedHtml = updatedHtml.replace(regex, `$1${ptsStr}$2`);
+        if (updatedHtml !== before) patched++;
+      });
+
+      if (patched === 0) {
+        setStatus('Could not patch the file — try downloading and editing manually.', true);
+        return;
+      }
+
+      const blob = new Blob([updatedHtml], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'torfaen-knowledge.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setStatus(`✓ Exported updated file with ${patched} edit${patched === 1 ? '' : 's'}. Re-upload to publish.`, true);
+    })
+    .catch(err => {
+      console.error(err);
+      setStatus('Export failed — your browser may block local file fetching. Try from your Netlify URL.', true);
+    });
+});
+
+// Make the export ref point to the new button
+window._editExport = newExport;
+
+// Patch the reset to also handle boundary changes
+const newReset = editReset;
+newReset.addEventListener('click', () => {
+  // Restore boundaries
+  for (const id in boundaryEdits) {
+    areaBoundaries[id] = JSON.parse(JSON.stringify(originalBoundaries[id]));
+    if (polygonLayers[id]) {
+      polygonLayers[id].setLatLngs(areaBoundaries[id]);
+    }
+    if (editMarkers[id]) {
+      editMarkers[id].forEach((m, idx) => m.setLatLng(areaBoundaries[id][idx]));
+    }
+  }
+  for (const k in boundaryEdits) delete boundaryEdits[k];
+});
+
+
+</script>
+
+</body>
+</html>
