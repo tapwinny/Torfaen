@@ -514,6 +514,31 @@ body {
   position: sticky;
   top: 0;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-results-action {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  background: linear-gradient(135deg, var(--rust-dark) 0%, var(--rust) 100%);
+  color: var(--ink);
+  border: 1px solid var(--rust);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 0 10px rgba(217, 70, 239, 0.35);
+}
+
+.search-results-action:hover {
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.6);
+  transform: translateY(-1px);
 }
 
 .search-result-item {
@@ -2028,7 +2053,20 @@ function renderSearchResults(query) {
     return;
   }
 
-  const header = `<div class="search-results-header">${matches.length} match${matches.length === 1 ? '' : 'es'}</div>`;
+  // Detect if all matches share a single category — if so, offer a "Show only these" shortcut.
+  // This is the moment where filter chips would replicate what the user already searched.
+  const matchCategories = [...new Set(matches.map(m => getAreaCategory(m)))];
+  const sharesCategory = matchCategories.length === 1 && matches.length >= 3;
+  const sharedCategoryId = sharesCategory ? matchCategories[0] : null;
+  const sharedCategoryLabel = sharedCategoryId ? (categoryConfig.find(c => c.id === sharedCategoryId)?.label || sharedCategoryId) : '';
+
+  let headerHtml = `<div class="search-results-header">
+    <span class="search-results-count">${matches.length} match${matches.length === 1 ? '' : 'es'}</span>`;
+  if (sharesCategory) {
+    headerHtml += `<button class="search-results-action" id="search-show-only" type="button">Show only ${sharedCategoryLabel} on map →</button>`;
+  }
+  headerHtml += `</div>`;
+
   const items = matches.map(a => {
     const isLandmark = a.group && a.group.includes('landmarks');
     const color = colors[a.town];
@@ -2043,7 +2081,7 @@ function renderSearchResults(query) {
     `;
   }).join('');
 
-  resultsBox.innerHTML = header + items;
+  resultsBox.innerHTML = headerHtml + items;
   resultsBox.classList.add('open');
 
   // Click result -> activate area
@@ -2052,6 +2090,26 @@ function renderSearchResults(query) {
       activateArea(el.dataset.id);
     });
   });
+
+  // Wire the "Show only these" button if it was shown
+  const showOnlyBtn = document.getElementById('search-show-only');
+  if (showOnlyBtn) {
+    showOnlyBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      // Set the category filter to just this category, then clear the search
+      activeCategories.clear();
+      activeCategories.add(sharedCategoryId);
+      // Reset town filter to all (so we don't accidentally hide pins by town too)
+      allTownIds.forEach(t => activeTowns.add(t));
+      applyCategoryFilter();
+      // Clear the search itself so the user sees the clean filtered view
+      searchInput.value = '';
+      renderSearchResults('');
+      // Fit view to the now-filtered pins
+      const fitBounds = L.latLngBounds(matches.map(a => [a.lat, a.lng]));
+      map.flyToBounds(fitBounds, { padding: [60, 60], duration: 0.6, maxZoom: 14 });
+    });
+  }
 
   applyMapFilter(matches.map(m => m.id));
 
