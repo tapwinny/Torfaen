@@ -281,6 +281,32 @@ const areas = [
   { id: 'hotel-premier-inn-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Premier Inn — Cwmbran', note: 'Premier Inn hotel, northern Cwmbran (next to Ashbridge Inn).', lat: 51.670413, lng: -3.017647 },
   // Cwmbran Stadium
   { id: 'entertainment-cwmbran-stadium', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Stadium', note: 'Athletics and sports stadium in Cwmbran.', lat: 51.644024, lng: -3.020579 },
+
+  // Batch — cemetery, golf clubs, pubs, shops, retail park, workplaces, nurseries
+  { id: 'cemetery-gwent-crematorium', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Gwent Crematorium', note: 'Crematorium in Croesyceiliog, Cwmbran.', lat: 51.668181, lng: -3.001214 },
+  { id: 'entertainment-greenmeadow-golf', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Greenmeadow Golf Club', note: 'Golf club north-east of Croesyceiliog.', lat: 51.670345, lng: -2.99922 },
+  { id: 'entertainment-pontnewydd-golf', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Pontnewydd Golf Club', note: 'Golf club in Pontnewydd, Cwmbran.', lat: 51.66657, lng: -3.036596 },
+  { id: 'entertainment-llanyrafon-golf', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llanyrafon Golf Course', note: 'Golf course in Llanyrafon, Cwmbran.', lat: 51.644057, lng: -3.007024 },
+  { id: 'pub-teazer-village', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Teazer Village Pub', note: 'Pub in New Inn area, Pontypool.', lat: 51.688267, lng: -3.007706 },
+  { id: 'shop-spar-new-inn', town: 'pontypool', group: 'pontypool-landmarks', name: 'Spar — New Inn', note: 'Spar convenience shop in New Inn, Pontypool.', lat: 51.688662, lng: -3.008018 },
+  { id: 'shop-premier-sebastopol', town: 'pontypool', group: 'pontypool-landmarks', name: 'Sebastopol Premier Shop', note: 'Premier convenience shop in Sebastopol, Pontypool.', lat: 51.677321, lng: -3.022391 },
+  { id: 'shop-one-stop-pontnewydd', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'One Stop — Pontnewydd', note: 'One Stop convenience shop in Pontnewydd, Cwmbran.', lat: 51.661101, lng: -3.024611 },
+  { id: 'shop-premier-pontnewydd-2', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Premier Shop — Pontnewydd', note: 'Premier convenience shop in Pontnewydd, Cwmbran.', lat: 51.661234, lng: -3.025427 },
+  { id: 'shop-family-shopper-pontnewydd', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Family Shopper — Pontnewydd', note: 'Family Shopper convenience store in Pontnewydd, Cwmbran.', lat: 51.661161, lng: -3.027272 },
+  { id: 'shop-ab-convenience', town: 'pontypool', group: 'pontypool-landmarks', name: 'A&B Convenience Store', note: 'Convenience store in Sebastopol/Griffithstown area, Pontypool.', lat: 51.67737, lng: -3.028376 },
+  { id: 'shop-cwmbran-retail-park', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Retail Park', note: 'Retail park with multiple stores (Currys, Dreams, Next, Halfords, TK Maxx, B&Q).', lat: 51.653424, lng: -3.027093 },
+  { id: 'shop-currys', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Currys', note: 'Electronics store at Cwmbran Retail Park.', lat: 51.653837, lng: -3.02787 },
+  { id: 'shop-dreams', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Dreams', note: 'Bed shop at Cwmbran Retail Park.', lat: 51.654176, lng: -3.028095 },
+  { id: 'shop-next', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Next', note: 'Clothing store at Cwmbran Retail Park.', lat: 51.653551, lng: -3.027674 },
+  { id: 'shop-halfords', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Halfords', note: 'Car parts and cycles shop at Cwmbran Retail Park.', lat: 51.653147, lng: -3.027384 },
+  { id: 'shop-tk-maxx', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'TK Maxx', note: 'Discount homeware and clothing at Cwmbran Retail Park.', lat: 51.652759, lng: -3.027108 },
+  { id: 'shop-bq', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'B&Q', note: 'DIY and home improvement store at Cwmbran Retail Park.', lat: 51.652585, lng: -3.026876 },
+  { id: 'shop-bm', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'B&M', note: 'B&M discount store, Cwmbran.', lat: 51.65068, lng: -3.022905 },
+  { id: 'civic-vantage-point-nhs', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Vantage Point — NHS Staff', note: 'NHS staff office building, Cwmbran.', lat: 51.638381, lng: -3.023953 },
+  { id: 'civic-festive-productions', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Festive Productions', note: 'Workplace in Cwmbran (Christmas products manufacturer).', lat: 51.639849, lng: -3.024854 },
+  { id: 'entertainment-cheeky-monkeys', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cheeky Monkeys', note: 'Childrens play centre/nursery in Cwmbran.', lat: 51.643258, lng: -3.048577 },
+  { id: 'school-building-blocks', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Building Blocks Nursery', note: 'Childrens nursery in Cwmbran.', lat: 51.642913, lng: -3.048711 },
+  { id: 'civic-panteg-house', town: 'pontypool', group: 'pontypool-landmarks', name: 'Panteg House — Entrance', note: 'Council/community facility, Panteg, Pontypool.', lat: 51.68332, lng: -3.027588 },
 ];
 
 const areaBoundaries = {
