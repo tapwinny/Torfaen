@@ -1922,6 +1922,10 @@ const activeTowns = new Set(allTownIds);
 function applyCategoryFilter() {
   const allCatsActive = activeCategories.size === allCategoryIds.length;
   const allTownsActive = activeTowns.size === allTownIds.length;
+  // For boundary purposes only: if no towns are selected at all, treat it as "no filter"
+  // (otherwise hiding everything via the "All" toggle would also hide explicitly-toggled boundaries).
+  // Pins still respect the literal town selection so the user has full control over them.
+  const townFilterForBoundaries = activeTowns.size === 0;
 
   // Apply visibility to each marker — area must match BOTH category AND town filters
   areas.forEach(area => {
@@ -1945,7 +1949,7 @@ function applyCategoryFilter() {
   for (const id in polygonLayers) {
     const poly = polygonLayers[id];
     const area = areas.find(a => a.id === id);
-    const townVisible = !area || allTownsActive || activeTowns.has(area.town);
+    const townVisible = !area || allTownsActive || townFilterForBoundaries || activeTowns.has(area.town);
     const onMap = map.hasLayer(poly);
     if (townVisible && !onMap) {
       poly.addTo(map);
@@ -1958,7 +1962,7 @@ function applyCategoryFilter() {
   for (const id in boundaryLabels) {
     const label = boundaryLabels[id];
     const area = areas.find(a => a.id === id);
-    const townVisible = !area || allTownsActive || activeTowns.has(area.town);
+    const townVisible = !area || allTownsActive || townFilterForBoundaries || activeTowns.has(area.town);
     const onMap = map.hasLayer(label);
     if (townVisible && !onMap) {
       label.addTo(map);
