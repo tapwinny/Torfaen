@@ -218,6 +218,52 @@ body {
   background: var(--rust);
 }
 
+/* ====== BOUNDARY LABELS (permanent names inside polygons) ====== */
+.boundary-label-wrapper {
+  background: none !important;
+  border: none !important;
+  pointer-events: none;
+}
+
+.boundary-label {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-shadow:
+    -1px -1px 0 rgba(0, 0, 0, 0.85),
+     1px -1px 0 rgba(0, 0, 0, 0.85),
+    -1px  1px 0 rgba(0, 0, 0, 0.85),
+     1px  1px 0 rgba(0, 0, 0, 0.85),
+     0    0 6px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  position: relative;
+  padding: 2px 6px;
+  background: rgba(15, 10, 23, 0.55);
+  border-radius: 2px;
+  transition: opacity 0.25s ease;
+  user-select: none;
+}
+
+/* Each town gets its own subtle tint on the label so you can tell at a glance */
+.boundary-label[data-town="blaenavon"] {
+  color: #ffaae0;
+}
+.boundary-label[data-town="pontypool"] {
+  color: #ffd5f0;
+}
+.boundary-label[data-town="cwmbran"] {
+  color: #d8b8ff;
+}
+
+/* Hidden state — animates out when zoomed too far */
+.boundary-label-hidden .boundary-label {
+  opacity: 0;
+}
+
 /* ====== EDIT MODE PANEL ====== */
 .edit-panel {
   background: var(--paper-light);
@@ -1408,6 +1454,13 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 18,
 }).addTo(map);
 
+// Refresh boundary labels visibility on zoom change (they hide at far zoom)
+map.on('zoomend', () => {
+  if (typeof updateBoundaryLabels === 'function') {
+    updateBoundaryLabels();
+  }
+});
+
 // Recalculate map size whenever the layout might have changed.
 // The map height uses 75vh, so its actual size depends on resolved viewport dimensions.
 // Multiple safety nets:
@@ -1886,18 +1939,31 @@ function applyCategoryFilter() {
     }
   });
 
-  // Boundary polygons — the 'areas' category filter + town filter both apply
-  const areasFilterActive = allCatsActive || activeCategories.has('areas');
+  // Boundary polygons — only the town filter applies to them.
+  // (Boundaries are controlled by the "Show boundaries" toggle button, NOT by category filters.
+  // This way you can hide all pins and still see the boundaries on their own.)
   for (const id in polygonLayers) {
     const poly = polygonLayers[id];
     const area = areas.find(a => a.id === id);
     const townVisible = !area || allTownsActive || activeTowns.has(area.town);
-    const visible = areasFilterActive && townVisible;
     const onMap = map.hasLayer(poly);
-    if (visible && !onMap) {
+    if (townVisible && !onMap) {
       poly.addTo(map);
-    } else if (!visible && onMap) {
+    } else if (!townVisible && onMap) {
       map.removeLayer(poly);
+    }
+  }
+
+  // Boundary labels follow the same town filter as the polygons
+  for (const id in boundaryLabels) {
+    const label = boundaryLabels[id];
+    const area = areas.find(a => a.id === id);
+    const townVisible = !area || allTownsActive || activeTowns.has(area.town);
+    const onMap = map.hasLayer(label);
+    if (townVisible && !onMap) {
+      label.addTo(map);
+    } else if (!townVisible && onMap) {
+      map.removeLayer(label);
     }
   }
 
@@ -2191,6 +2257,7 @@ const boundariesEdit = document.getElementById('boundaries-edit');
 let boundariesVisible = false;
 let boundariesEditMode = false;
 const polygonLayers = {};  // id -> L.polygon
+const boundaryLabels = {}; // id -> L.marker (permanent name label inside polygon)
 const editMarkers = {};    // id -> [L.marker, L.marker, ...] for each vertex
 const boundaryEdits = {};  // id -> updated coordinate array (set when user drags)
 
@@ -2207,11 +2274,15 @@ function getBoundaryColor(id) {
 }
 
 function renderBoundaries() {
-  // Remove any existing polygon layers
+  // Remove any existing polygon and label layers
   for (const id in polygonLayers) {
     map.removeLayer(polygonLayers[id]);
   }
   for (const id in polygonLayers) delete polygonLayers[id];
+  for (const id in boundaryLabels) {
+    map.removeLayer(boundaryLabels[id]);
+  }
+  for (const id in boundaryLabels) delete boundaryLabels[id];
 
   // Draw each polygon
   for (const id in areaBoundaries) {
@@ -2239,7 +2310,7 @@ function renderBoundaries() {
       polygon.setStyle({ weight: 3, fillOpacity: 0.08 });
     });
 
-    // Label binding — show name on hover
+    // Hover tooltip — still useful at low zoom when permanent labels are hidden
     polygon.bindTooltip(area.name, {
       permanent: false,
       direction: 'center',
@@ -2252,11 +2323,46 @@ function renderBoundaries() {
     });
 
     polygonLayers[id] = polygon;
+
+    // Add a permanent name label at the pin's position (which sits inside the polygon)
+    // The label is invisible at low zoom — we'll handle that with updateBoundaryLabels()
+    const labelIcon = L.divIcon({
+      className: 'boundary-label-wrapper',
+      html: `<div class="boundary-label" data-town="${area.town}">${area.name}</div>`,
+      iconSize: null,  // let CSS size it
+      iconAnchor: [0, 0]  // anchor handled by CSS transform
+    });
+    const labelMarker = L.marker([area.lat, area.lng], {
+      icon: labelIcon,
+      interactive: false,  // labels don't intercept clicks — polygon click still works
+      keyboard: false
+    }).addTo(map);
+    boundaryLabels[id] = labelMarker;
   }
 
-  // Re-apply current category filter so polygons obey the 'areas' filter
+  // Apply current visibility rules (zoom threshold + town filter)
+  updateBoundaryLabels();
+
+  // Re-apply current town/category filter so polygons obey it
   if (typeof applyCategoryFilter === 'function') {
     applyCategoryFilter();
+  }
+}
+
+// Show/hide labels based on current zoom level.
+// Polygons themselves stay visible at all zooms; only the labels disappear when too cluttered.
+function updateBoundaryLabels() {
+  const zoom = map.getZoom();
+  const showLabels = zoom >= 13;  // hide labels at far zoom to reduce clutter
+  for (const id in boundaryLabels) {
+    const marker = boundaryLabels[id];
+    const el = marker.getElement();
+    if (!el) continue;
+    if (showLabels) {
+      el.classList.remove('boundary-label-hidden');
+    } else {
+      el.classList.add('boundary-label-hidden');
+    }
   }
 }
 
@@ -2264,6 +2370,10 @@ function clearBoundaries() {
   for (const id in polygonLayers) {
     map.removeLayer(polygonLayers[id]);
     delete polygonLayers[id];
+  }
+  for (const id in boundaryLabels) {
+    map.removeLayer(boundaryLabels[id]);
+    delete boundaryLabels[id];
   }
 }
 
