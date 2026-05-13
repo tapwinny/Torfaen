@@ -47,6 +47,61 @@ body {
     repeating-linear-gradient(45deg, transparent 0px, transparent 2px, rgba(244, 240, 250, 0.008) 2px, rgba(244, 240, 250, 0.008) 3px);
 }
 
+/* ====== TOP NAVIGATION BAR ====== */
+.topbar {
+  background: linear-gradient(135deg, #1a1424 0%, #2d1b4e 100%);
+  border-bottom: 1px solid var(--line-bright);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.topbar .brand {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 22px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--rust) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-decoration: none;
+}
+
+.topbar nav {
+  display: flex;
+  gap: 4px;
+}
+
+.topbar a.nav-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.topbar a.nav-link:hover {
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.topbar a.nav-link.current {
+  color: var(--ink);
+  border-color: var(--line-bright);
+  background: var(--paper-dark);
+  box-shadow: 0 0 12px var(--glow);
+}
+
 /* ====== TOP MASTHEAD ====== */
 .masthead {
   border-bottom: 3px double var(--line-bright);
@@ -1238,6 +1293,14 @@ footer {
 </head>
 <body>
 
+<div class="topbar">
+  <a href="index.html" class="brand">Torfaen Knowledge</a>
+  <nav>
+    <a href="index.html" class="nav-link current">Map</a>
+    <a href="quiz.html" class="nav-link">Quiz</a>
+  </nav>
+</div>
+
 <header class="masthead">
   <div class="eyebrow">Volume I · The Eastern Valley</div>
   <h1>Torfaen<span>A Taxi Driver's Atlas</span></h1>
@@ -1363,337 +1426,9 @@ footer {
   Compiled for the Torfaen Knowledge Test · Drive carefully
 </footer>
 
+<script src="torfaen-data.js"></script>
 <script>
 // ============ DATA ============
-const areas = [
-  // BLAENAVON
-  { id: 'blaenavon-centre', town: 'blaenavon', group: 'blaenavon', name: 'Blaenavon', note: 'Broad Street, King Street, Queen Street, Ironworks. UNESCO World Heritage Site.', lat: 51.7739213, lng: -3.0799055 },
-  { id: 'forgeside', town: 'blaenavon', group: 'blaenavon', name: 'Forgeside', note: 'Across the valley from town — home of Big Pit.', lat: 51.7720093, lng: -3.0944538 },
-  { id: 'garn-yr-erw', town: 'blaenavon', group: 'blaenavon', name: 'Garn-yr-erw', note: 'Upland settlement to the NW, near Keepers Pond and the heritage railway.', lat: 51.7805329, lng: -3.1082726 },
-  { id: 'cwmavon', town: 'blaenavon', group: 'blaenavon', name: 'Cwmavon', note: 'Between Blaenavon and Varteg — canal-side conservation village.', lat: 51.7573216, lng: -3.0596495 },
-
-  // PONTYPOOL NORTH
-  { id: 'varteg', town: 'pontypool', group: 'pontypool-north', name: 'Varteg', note: 'Hilltop village above Garndiffaith.', lat: 51.7555949, lng: -3.0709791 },
-  { id: 'talywain', town: 'pontypool', group: 'pontypool-north', name: 'Talywain', note: 'Between Garndiffaith and Abersychan.', lat: 51.7306698, lng: -3.0658722 },
-  { id: 'garndiffaith', town: 'pontypool', group: 'pontypool-north', name: 'Garndiffaith', note: 'Village famous for its stone viaduct.', lat: 51.7373674, lng: -3.0661297 },
-  { id: 'pentwyn', town: 'pontypool', group: 'pontypool-north', name: 'Pentwyn', note: 'Small settlement near Abersychan.', lat: 51.7207809, lng: -3.0656576 },
-  { id: 'abersychan', town: 'pontypool', group: 'pontypool-north', name: 'Abersychan', note: 'Town north of Pontypool. Community includes Cwmavon, Garndiffaith, Pentwyn, Talywain, Varteg.', lat: 51.7267092, lng: -3.0633402 },
-  { id: 'snatchwood', town: 'pontypool', group: 'pontypool-north', name: 'Snatchwood', note: 'Small suburb between Abersychan and Pontnewynydd.', lat: 51.7184147, lng: -3.0582333 },
-  { id: 'pontnewynydd', town: 'pontypool', group: 'pontypool-north', name: 'Pontnewynydd', note: 'NW of Pontypool — NOT Pontnewydd (Cwmbran)!', lat: 51.7117275, lng: -3.0534053 },
-  { id: 'trevethin', town: 'pontypool', group: 'pontypool-north', name: 'Trevethin', note: 'Hillside NE of Pontypool — historic parish.', lat: 51.7143999, lng: -3.0427837 },
-
-  // PONTYPOOL TOWN
-  { id: 'wainfelin', town: 'pontypool', group: 'pontypool-town', name: 'Wainfelin', note: 'Northern part of Pontypool town.', lat: 51.7066882, lng: -3.0501652 },
-  { id: 'penygarn', town: 'pontypool', group: 'pontypool-town', name: 'Penygarn', note: 'East side, above New Inn.', lat: 51.7069542, lng: -3.0360889 },
-  { id: 'pontypool-centre', town: 'pontypool', group: 'pontypool-town', name: 'Pontypool', note: 'Civic Centre, market, Pontypool Park.', lat: 51.701542, lng: -3.0454874 },
-  { id: 'tranch', town: 'pontypool', group: 'pontypool-town', name: 'Tranch', note: 'West side of town.', lat: 51.7004648, lng: -3.0535126 },
-  { id: 'cwmynyscoy', town: 'pontypool', group: 'pontypool-town', name: 'Cwmynyscoy', note: 'Small district south-west of the town.', lat: 51.6921655, lng: -3.0393934 },
-
-  // PONTYPOOL SOUTH
-  { id: 'pontymoile', town: 'pontypool', group: 'pontypool-south', name: 'Pontymoile', note: 'Canal basin just south of the centre.', lat: 51.697252, lng: -3.016583 },
-  { id: 'sebastopol', town: 'pontypool', group: 'pontypool-south', name: 'Sebastopol (Panteg)', note: 'Between Griffithstown and Pontymoile.', lat: 51.6783833, lng: -3.0297804 },
-  { id: 'griffithstown', town: 'pontypool', group: 'pontypool-south', name: 'Griffithstown', note: 'South of Pontypool, north of New Inn.', lat: 51.6881484, lng: -3.0278921 },
-  { id: 'new-inn', town: 'pontypool', group: 'pontypool-south', name: 'New Inn', note: 'Railway station ("Pontypool & New Inn") is here.', lat: 51.690854, lng: -3.009586 },
-
-  // CWMBRAN N
-  { id: 'pontnewydd', town: 'cwmbran', group: 'cwmbran-n', name: 'Pontnewydd', note: 'North Cwmbran — NOT Pontnewynydd (Pontypool)!', lat: 51.6632392, lng: -3.0323124 },
-  { id: 'pontrhydyrun', town: 'cwmbran', group: 'cwmbran-n', name: 'Pontrhydyrun', note: 'Between Pontnewydd and Sebastopol.', lat: 51.6678708, lng: -3.0192661 },
-  { id: 'upper-cwmbran', town: 'cwmbran', group: 'cwmbran-n', name: 'Upper Cwmbran', note: 'Hillside area NW of town.', lat: 51.6646767, lng: -3.0513668 },
-
-  // CWMBRAN E
-  { id: 'croesyceiliog', town: 'cwmbran', group: 'cwmbran-e', name: 'Croesyceiliog', note: 'NE Cwmbran — major neighbourhood, school cluster.', lat: 51.659428, lng: -3.008425 },
-  { id: 'llanyrafon', town: 'cwmbran', group: 'cwmbran-e', name: 'Llanyrafon (Llanyravon)', note: 'East Cwmbran — historic mill.', lat: 51.647055, lng: -3.008324 },
-
-  // CWMBRAN SE
-  { id: 'old-cwmbran', town: 'cwmbran', group: 'cwmbran-se', name: 'Old Cwmbran', note: 'Original village core before the new town.', lat: 51.647127, lng: -3.02511 },
-  { id: 'cwmbran-centre', town: 'cwmbran', group: 'cwmbran-se', name: 'Cwmbran town centre', note: 'Shopping centre, bus station, rail station.', lat: 51.6538682, lng: -3.0223131 },
-  { id: 'oakfield', town: 'cwmbran', group: 'cwmbran-se', name: 'Oakfield', note: 'SE Cwmbran near Llantarnam.', lat: 51.6409531, lng: -3.0182362 },
-  { id: 'llantarnam', town: 'cwmbran', group: 'cwmbran-se', name: 'Llantarnam', note: 'Southernmost — abbey & conservation area. Gateway to Newport.', lat: 51.6328827, lng: -3.0099964 },
-
-  // CWMBRAN W
-  { id: 'thornhill', town: 'cwmbran', group: 'cwmbran-w', name: 'Thornhill', note: 'Western hillside neighbourhood.', lat: 51.6584474, lng: -3.0491352 },
-  { id: 'greenmeadow', town: 'cwmbran', group: 'cwmbran-w', name: 'Greenmeadow', note: 'West Cwmbran — Greenmeadow Community Farm.', lat: 51.650673, lng: -3.0487919 },
-  { id: 'st-dials', town: 'cwmbran', group: 'cwmbran-w', name: 'St Dials', note: 'West, near Old Cwmbran.', lat: 51.6491286, lng: -3.034544 },
-  { id: 'fairwater', town: 'cwmbran', group: 'cwmbran-w', name: 'Fairwater', note: 'West Cwmbran neighbourhood.', lat: 51.6449212, lng: -3.0461311 },
-
-  // CWMBRAN SW
-  { id: 'henllys', town: 'cwmbran', group: 'cwmbran-sw', name: 'Henllys', note: 'Western edge — own community council.', lat: 51.6376239, lng: -3.0588341 },
-  { id: 'ty-canol', town: 'cwmbran', group: 'cwmbran-sw', name: 'Ty Canol', note: 'West Cwmbran near Henllys.', lat: 51.644868, lng: -3.057375 },
-  { id: 'coed-eva', town: 'cwmbran', group: 'cwmbran-sw', name: 'Coed Eva', note: 'SW Cwmbran (includes Two Locks zone).', lat: 51.6395416, lng: -3.0445004 },
-  { id: 'two-locks', town: 'cwmbran', group: 'cwmbran-sw', name: 'Two Locks', note: 'Named after the canal locks. Adjoins Hollybush.', lat: 51.6422581, lng: -3.0312824 },
-  { id: 'hollybush', town: 'cwmbran', group: 'cwmbran-sw', name: 'Hollybush', note: 'South Cwmbran — adjacent to Two Locks.', lat: 51.6371978, lng: -3.0353165 },
-
-  // CWMBRAN LANDMARKS
-  { id: 'cwmbran-police', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Police Station', note: 'Gwent Police station, central Cwmbran.', lat: 51.6514219, lng: -3.021782 },
-  { id: 'grange-main', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Grange Hospital — Main Entrance', note: 'Llanfrechfa — main hospital entrance.', lat: 51.64846565003974, lng: -2.996784595810235 },
-  { id: 'grange-ae', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Grange Hospital — A&E', note: 'Accident & Emergency entrance.', lat: 51.650054783870296, lng: -2.996331633494131 },
-  { id: 'grange-children-ae', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Grange Hospital — Children\'s A&E', note: 'Children\'s Accident & Emergency entrance.', lat: 51.650082, lng: -2.997068 },
-  { id: 'cwmbran-village-surgery', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Village Surgery', note: 'GP surgery, central Cwmbran.', lat: 51.6483431, lng: -3.0233055 },
-  { id: 'cwmbran-fire-station', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Fire Station', note: 'South Wales Fire & Rescue.', lat: 51.6442288, lng: -3.0256873 },
-  { id: 'aldi-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Aldi', note: 'Supermarket, central Cwmbran.', lat: 51.655479, lng: -3.026623 },
-  { id: 'asda-bus-stop', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Asda — Bus Stop Pickup', note: 'Passenger pickup point at Asda.', lat: 51.654204, lng: -3.023785 },
-  { id: 'primark-pickup', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Primark — Passenger Pickup', note: 'Pickup point at Primark.', lat: 51.653508, lng: -3.023340 },
-  { id: 'wetherspoons-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Wetherspoons (Bush Inn)', note: 'Pub & passenger pickup point.', lat: 51.6554756, lng: -3.0206931 },
-  { id: 'mcdonalds-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'McDonald\'s Cwmbran — Drop/Pickup', note: 'Drop-off and pickup point.', lat: 51.655185, lng: -3.021218 },
-  { id: 'vue-cinema', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Vue Cinema — Drop/Pickup', note: 'Cinema drop-off and pickup point.', lat: 51.654314, lng: -3.020030 },
-  { id: 'lloyds-bank-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Lloyds Bank — Drop/Pickup', note: 'Drop-off and pickup point.', lat: 51.654761, lng: -3.020394 },
-  { id: 'morrisons-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Morrisons — Drop/Pickup', note: 'Supermarket drop-off and pickup.', lat: 51.655124, lng: -3.017230 },
-  { id: 'coleg-gwent', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Coleg Gwent — Drop/Pickup', note: 'College drop-off and pickup point.', lat: 51.654673, lng: -3.017442 },
-  { id: 'parkway-staff', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Parkway Hotel — Staff Entrance', note: 'Staff entrance, southern Cwmbran.', lat: 51.632439388647335, lng: -3.017231894378185 },
-  { id: 'parkway-main', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Parkway Hotel — Main Entrance', note: 'Main hotel entrance.', lat: 51.63202984138205, lng: -3.017671782410145 },
-  { id: 'pub-crows-nest', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Crow\'s Nest', note: 'Pub, Llanyrafon area.', lat: 51.6454572, lng: -3.0066329 },
-  { id: 'llanyrafon-social', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llanyrafon Social Club', note: 'Social club in Llanyrafon.', lat: 51.646523, lng: -3.009376 },
-  { id: 'llanyrafon-skatepark', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llanyrafon Skatepark', note: 'Skatepark in Llanyrafon.', lat: 51.646700, lng: -3.011348 },
-  { id: 'cwmbran-train-station', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Train Station', note: 'Mainline rail station for Cwmbran.', lat: 51.65716039303069, lng: -3.0161606966385817 },
-
-  // PONTYPOOL LANDMARKS
-  { id: 'pontypool-station-old', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool & New Inn Station — Old Entrance', note: 'Original entrance to the rail station.', lat: 51.696892, lng: -3.013686 },
-  { id: 'pontypool-station-new', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool & New Inn Station — New Entrance', note: 'New entrance to the rail station.', lat: 51.69770221678581, lng: -3.013481255740125 },
-  { id: 'cemetery-panteg', town: 'pontypool', group: 'pontypool-landmarks', name: 'Panteg Cemetery — Entrance', note: 'Cemetery entrance, New Inn.', lat: 51.697957, lng: -3.020638 },
-  { id: 'rowan-ward', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — Rowan Ward', note: 'Rowan Ward, Griffithstown.', lat: 51.690755, lng: -3.025321 },
-  { id: 'county-hospital-main', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — Main Entrance', note: 'Main entrance, Griffithstown.', lat: 51.68967003915936, lng: -3.0260609794915236 },
-  { id: 'county-hospital-2nd', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — 2nd Entrance', note: 'Second entrance, Griffithstown.', lat: 51.693425, lng: -3.028282 },
-  { id: 'talygarn-ward', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — Talygarn Ward', note: 'Talygarn Ward entrance.', lat: 51.692007, lng: -3.026963 },
-  { id: 'cedar-ward', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — Cedar Ward', note: 'Cedar Ward entrance.', lat: 51.690783, lng: -3.025603 },
-  { id: 'harvester-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Harvester — Service Roundabout', note: 'Restaurant at the service roundabout.', lat: 51.694392, lng: -3.022632 },
-  { id: 'premier-inn-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Premier Inn — Service Roundabout', note: 'Hotel at the service roundabout.', lat: 51.694684, lng: -3.023199 },
-  { id: 'mcdonalds-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'McDonald\'s — Service Roundabout', note: 'Restaurant at the service roundabout.', lat: 51.693181, lng: -3.020666 },
-  { id: 'best-western-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Best Western — Service Roundabout', note: 'Hotel at the service roundabout.', lat: 51.691926, lng: -3.021469 },
-  { id: 'open-hearth', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Open Hearth Pub', note: 'Canal-side pub in Griffithstown.', lat: 51.681454, lng: -3.023244 },
-
-  // CWMBRAN PUBS
-  { id: 'pub-greenhouse', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Greenhouse (Pub)', note: 'Large family pub on Newport Rd, near Llantarnam.', lat: 51.6327428, lng: -3.0036718 },
-  { id: 'pub-bush-inn-upper', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Bush Inn (Upper Cwmbran)', note: 'Hillside pub in Upper Cwmbran with valley views.', lat: 51.6652623, lng: -3.0495483 },
-  { id: 'pub-blinkin-owl', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Blinkin Owl (Pub)', note: 'Pub on Henllys Way, Fairwater area.', lat: 51.6383497, lng: -3.0424404 },
-  { id: 'pub-upper-cock', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Upper Cock (Pub)', note: 'Gastropub on The Highway, Croesyceiliog.', lat: 51.6613226, lng: -3.0041116 },
-  { id: 'pub-mount-pleasant', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Mount Pleasant Inn (Pub)', note: 'Pub on Stryd Wesley, near Old Cwmbran.', lat: 51.6478785, lng: -3.026286 },
-  { id: 'pub-dorallt', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Dorallt Inn (Pub)', note: 'Village pub in Henllys.', lat: 51.6398112, lng: -3.0613178 },
-  { id: 'pub-three-blackbirds', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Three Blackbirds Inn (Pub)', note: 'Pub on Pentre Lane, southern Cwmbran.', lat: 51.6265792, lng: -3.0099481 },
-  { id: 'pub-castell-y-bwch', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Castell-y-bwch Inn (Pub)', note: 'Country gastropub on the western edge.', lat: 51.6269921, lng: -3.0507392 },
-  { id: 'pub-cwrt-henllys', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwrt Henllys Hotel (Pub)', note: 'Pub-restaurant with rooms, Henllys village.', lat: 51.6401974, lng: -3.0609959 },
-  { id: 'pub-six-in-hand', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Six In Hand (Pub)', note: 'Local pub in Croesyceiliog.', lat: 51.6630396, lng: -3.0098408 },
-
-  // PONTYPOOL PUBS
-  { id: 'pub-horse-jockey', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Horse & Jockey (Pub)', note: 'Country pub on Usk Rd, near New Inn.', lat: 51.7041817, lng: -3.0116165 },
-  { id: 'pub-unicorn', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Unicorn (Pub)', note: 'Pub on Albion Rd, Pontypool town.', lat: 51.6988988, lng: -3.0414158 },
-  { id: 'pub-little-crown', town: 'pontypool', group: 'pontypool-landmarks', name: 'Little Crown Inn (Pub)', note: 'Pub on Elled Rd, Wainfelin.', lat: 51.7087459, lng: -3.0521983 },
-  { id: 'pub-wain-y-clare', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Wain-Y-Clare (Pub)', note: 'Pub on Usk Rd, Penperlleni / near Mamhilad.', lat: 51.7135357, lng: -3.0002064 },
-  { id: 'pub-unicorn-inn', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Unicorn Inn (Pub)', note: 'Pub on Cwmynyscoy Rd, south of town.', lat: 51.6928273, lng: -3.0378324 },
-  { id: 'pub-iron-duke', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Iron Duke (Pub)', note: 'Pub on Osborne Rd, Pontypool town (former Wetherspoons).', lat: 51.7040554, lng: -3.0423653 },
-  { id: 'pub-star-mamhilad', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Star Inn, Mamhilad (Pub)', note: 'Country pub on Old Abergavenny Rd.', lat: 51.7249813, lng: -3.0074912 },
-  { id: 'pub-rising-sun', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Rising Sun Inn (Pub)', note: 'Pub on Cwmavon Rd, Abersychan.', lat: 51.7323542, lng: -3.058877 },
-  { id: 'pub-white-hart-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'White Hart Hotel (Pub)', note: 'Pub on George St, central Pontypool.', lat: 51.7041418, lng: -3.0432665 },
-  { id: 'pub-twyn-y-ffrwd', town: 'pontypool', group: 'pontypool-landmarks', name: 'Twyn Y Ffrwd Inn (Pub)', note: 'Family pub on Ffrwd Rd, Abersychan.', lat: 51.7284602, lng: -3.0578417 },
-  { id: 'pub-globe-talywain', town: 'pontypool', group: 'pontypool-landmarks', name: 'The Globe (Pub)', note: 'Local pub on Commercial Rd, Talywain.', lat: 51.7322546, lng: -3.0731463 },
-  { id: 'pub-white-hart-abersychan', town: 'pontypool', group: 'pontypool-landmarks', name: 'The White Hart (Abersychan)', note: 'Pub on Broad St, Abersychan.', lat: 51.7238016, lng: -3.0587 },
-  { id: 'pub-garn-workmens', town: 'pontypool', group: 'pontypool-landmarks', name: 'Garn Workmen\'s (Club)', note: 'Workmen\'s club on Herbert\'s Rd, Garndiffaith.', lat: 51.7378923, lng: -3.0704105 },
-
-  // BLAENAVON PUBS
-  { id: 'pub-riflemans-arms', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Rifleman\'s Arms (Pub)', note: 'Pub on Rifle St, Blaenavon.', lat: 51.7787739, lng: -3.0847603 },
-  { id: 'pub-castle-hotel-blaenavon', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Castle Hotel (Pub)', note: 'Pub on Broad St, central Blaenavon.', lat: 51.7727296, lng: -3.0845082 },
-  { id: 'pub-queen-victoria-inn', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Queen Victoria Inn (Pub)', note: 'Pub on Prince St, Blaenavon.', lat: 51.7719297, lng: -3.0855542 },
-  { id: 'pub-whistle-inn', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'The Whistle Inn (Pub)', note: 'Pub & campsite, Garn-yr-erw, near heritage railway.', lat: 51.7841602, lng: -3.1196451 },
-  { id: 'pub-cellar-blaenavon', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'The Cellar (Bar)', note: 'Sports bar on Broad St, Blaenavon.', lat: 51.7741536, lng: -3.0837893 },
-
-  // CWMBRAN WORKINGMEN'S / SOCIAL CLUBS
-  { id: 'club-cwmbran-wmc', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Working Men\'s Band Club', note: 'Workingmen\'s Club on Oldbury Rd, central Cwmbran.', lat: 51.6452009, lng: -3.0193388 },
-  { id: 'club-pontnewydd-wmc', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Pontnewydd Workingmen\'s Club', note: 'Workingmen\'s Club on Chapel St, Pontnewydd.', lat: 51.657791, lng: -3.026518 },
-  { id: 'club-st-josephs', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'St Joseph\'s Social Club', note: 'Social Club on Blenheim Rd, St Dials.', lat: 51.649234, lng: -3.0385717 },
-  { id: 'club-cwmbran-celtic', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Celtic Sports & Social Club', note: 'Sports & social club on Oak St, near Old Cwmbran.', lat: 51.6470836, lng: -3.0247382 },
-  { id: 'club-croesyceiliog-cricket', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Croesyceiliog Cricket & Rugby Club', note: 'Sports & social club on The Highway, Croesyceiliog.', lat: 51.6618706, lng: -3.0044683 },
-  { id: 'club-croesyceiliog-bowls', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Croesyceiliog Bowls Club', note: 'Bowls club on Woodland Rd, Croesyceiliog.', lat: 51.6576221, lng: -3.0117935 },
-
-  // PONTYPOOL WORKINGMEN'S / SOCIAL CLUBS
-  { id: 'club-pontypool-wmc', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Working Men\'s Club', note: 'Workingmen\'s Club on Top Broadway, central Pontypool.', lat: 51.7006038, lng: -3.0437319 },
-  { id: 'club-pontnewynydd-ssc', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontnewynydd Sports & Social Club', note: 'Sports & social club on Mill Rd, Pontnewynydd.', lat: 51.7108017, lng: -3.0488492 },
-  { id: 'club-sebastopol-social', town: 'pontypool', group: 'pontypool-landmarks', name: 'Sebastopol Social Club', note: 'Social club on Wern Rd, Sebastopol.', lat: 51.6797513, lng: -3.0218637 },
-  { id: 'club-greenlawn-social', town: 'pontypool', group: 'pontypool-landmarks', name: 'Greenlawn Social Club', note: 'Social club on The Highway, New Inn.', lat: 51.6906398, lng: -3.0109009 },
-  { id: 'club-pilcs', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pilcs Club', note: 'Sports & social club on New Rd, New Inn.', lat: 51.688494, lng: -3.0189922 },
-
-  // BLAENAVON WORKINGMEN'S CLUBS
-  { id: 'club-blaenavon-workmens-hall', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Blaenavon Workmen\'s Hall', note: 'Historic workmen\'s hall & cinema on High St, Blaenavon.', lat: 51.7733152, lng: -3.0857847 },
-  { id: 'club-elgam-wmc', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Elgam & District Working Men\'s Club', note: 'Workingmen\'s club on Rifle St, Blaenavon.', lat: 51.7789398, lng: -3.0843204 },
-
-  // NEW AREAS FROM POLYGON DRAWING
-  { id: 'ty-coch', town: 'cwmbran', group: 'cwmbran-extra', name: 'Ty Coch', note: 'Cwmbran area.', lat: 51.6387958, lng: -3.0245447 },
-  { id: 'southville', town: 'cwmbran', group: 'cwmbran-extra', name: 'Southville', note: 'Cwmbran area.', lat: 51.650034, lng: -3.020339 },
-  { id: 'northville', town: 'cwmbran', group: 'cwmbran-extra', name: 'Northville', note: 'Cwmbran area.', lat: 51.657739, lng: -3.021726 },
-  { id: 'springvale', town: 'cwmbran', group: 'cwmbran-extra', name: 'Springvale', note: 'Cwmbran area.', lat: 51.6561046, lng: -3.0378914 },
-
-  // ADDITIONAL POLYGON-DRAWN AREAS
-  { id: 'pentrepiod', town: 'pontypool', group: 'pontypool-extra', name: 'Pentrepiod', note: 'Small Pontypool area, near Snatchwood.', lat: 51.7133629, lng: -3.062439 },
-  { id: 'old-furnace', town: 'pontypool', group: 'pontypool-extra', name: 'Old Furnace', note: 'Small area south-west of Tranch.', lat: 51.6993477, lng: -3.0668163 },
-  { id: 'lower-race', town: 'pontypool', group: 'pontypool-extra', name: 'Lower Race', note: 'South of Pontypool, near Cwmynyscoy.', lat: 51.6953843, lng: -3.046174 },
-  { id: 'llanfrechfa', town: 'cwmbran', group: 'cwmbran-extra', name: 'Llanfrechfa', note: 'Village south-east of Cwmbran — home of The Grange University Hospital.', lat: 51.642338, lng: -2.9933882 },
-
-  // SCHOOLS (32 from Torfaen Council directory)
-  { id: 'school-blenheim-road', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Blenheim Road Primary', note: 'Blenheim Road, St Dials.', lat: 51.6478005, lng: -3.0404019 },
-  { id: 'school-coed-eva', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Coed Eva Primary', note: 'Teynes, Coed Eva.', lat: 51.6407334, lng: -3.0463618 },
-  { id: 'school-croesyceiliog-pri', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Croesyceiliog Primary', note: 'North Road, Croesyceiliog.', lat: 51.6621012, lng: -3.009814 },
-  { id: 'school-croesyceiliog-sec', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Croesyceiliog School', note: 'Woodland Road, Croesyceiliog (secondary).', lat: 51.6564407, lng: -3.0063003 },
-  { id: 'school-crownbridge', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Crownbridge School (Special)', note: 'Turnpike Road, Croesyceiliog.', lat: 51.6540379, lng: -3.0045944 },
-  { id: 'school-cwmbran-high', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran High School', note: 'Ty Gwyn Way, Fairwater.', lat: 51.6475043, lng: -3.0529708 },
-  { id: 'school-greenmeadow', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Greenmeadow Primary', note: 'Ty Gwyn Way, Greenmeadow.', lat: 51.6490121, lng: -3.054328 },
-  { id: 'school-henllys-cw', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Henllys CW Primary', note: 'Ty-Canol Way, Cwmbran.', lat: 51.6429239, lng: -3.058244 },
-  { id: 'school-llantarnam-pri', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llantarnam Community Primary', note: 'Llantarnam Road, Llantarnam.', lat: 51.6354731, lng: -3.0081832 },
-  { id: 'school-llanyravon-pri', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llanyravon Primary', note: 'Llanyrafon Way, Llanyrafon.', lat: 51.6485195, lng: -3.0071801 },
-  { id: 'school-maendy', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Maendy Primary', note: 'Wayfield Crescent, Cwmbran.', lat: 51.657935, lng: -3.0240512 },
-  { id: 'school-nant-celyn', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Nant Celyn Primary', note: 'Henllys Way, Cwmbran.', lat: 51.6424379, lng: -3.0396402 },
-  { id: 'school-our-lady', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Our Lady of the Angels RC', note: 'Victoria Street, Cwmbran.', lat: 51.6491186, lng: -3.0232519 },
-  { id: 'school-pontnewydd-pri', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Pontnewydd Primary', note: 'Bryn Celyn Road, Pontnewydd.', lat: 51.6610164, lng: -3.0324304 },
-  { id: 'school-ponthir-cw', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Ponthir CW Primary', note: 'School Close, Ponthir.', lat: 51.6312211, lng: -2.9777616 },
-  { id: 'school-st-davids-rc', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'St Davids RC Primary', note: 'Caldicot Way, Pontnewydd.', lat: 51.662891, lng: -3.019288 },
-  { id: 'school-woodlands', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Woodlands Primary', note: 'Thornhill Road, Upper Cwmbran.', lat: 51.6611263, lng: -3.0479604 },
-  { id: 'school-ysgol-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Ysgol Gymraeg Cwmbran', note: 'Henllys Way, St Dials (Welsh medium).', lat: 51.6450743, lng: -3.0334389 },
-  { id: 'school-cwmffrwdoer-pri', town: 'pontypool', group: 'pontypool-landmarks', name: 'Cwmffrwdoer Primary', note: 'Waunddu, Pontnewynydd.', lat: 51.7109365, lng: -3.0650944 },
-  { id: 'school-garnteg', town: 'pontypool', group: 'pontypool-landmarks', name: 'Garnteg Primary', note: 'Hillcrest, Garndiffaith.', lat: 51.7366399, lng: -3.0653679 },
-  { id: 'school-george-street', town: 'pontypool', group: 'pontypool-landmarks', name: 'George Street Primary', note: 'Wainfelin Road, Pontypool.', lat: 51.7061996, lng: -3.0468231 },
-  { id: 'school-griffithstown-pri', town: 'pontypool', group: 'pontypool-landmarks', name: 'Griffithstown Primary', note: 'Florence Place, Griffithstown.', lat: 51.6833592, lng: -3.0253494 },
-  { id: 'school-new-inn-pri', town: 'pontypool', group: 'pontypool-landmarks', name: 'New Inn Primary', note: 'Golf Road, New Inn.', lat: 51.6926377, lng: -3.00659 },
-  { id: 'school-padre-pio', town: 'pontypool', group: 'pontypool-landmarks', name: 'Padre Pio RC Primary', note: 'Conway Road, Pontypool.', lat: 51.7039124, lng: -3.0495107 },
-  { id: 'school-penygarn-pri', town: 'pontypool', group: 'pontypool-landmarks', name: 'Penygarn Primary', note: 'Penygarn Road, Penygarn.', lat: 51.7103946, lng: -3.0346727 },
-  { id: 'school-ysgol-bryn-onnen', town: 'pontypool', group: 'pontypool-landmarks', name: 'Ysgol Bryn Onnen', note: 'Varteg Road, Varteg (Welsh medium).', lat: 51.7463625, lng: -3.0644774 },
-  { id: 'school-ysgol-panteg', town: 'pontypool', group: 'pontypool-landmarks', name: 'Ysgol Panteg', note: 'Station Road, Griffithstown (Welsh medium).', lat: 51.680335, lng: -3.020189 },
-  { id: 'school-abersychan', town: 'pontypool', group: 'pontypool-landmarks', name: 'Abersychan School', note: 'Incline Road, Abersychan (secondary).', lat: 51.7287194, lng: -3.0599821 },
-  { id: 'school-st-albans-rc', town: 'pontypool', group: 'pontypool-landmarks', name: 'St Albans RC High School', note: 'The Park, Pontypool (Catholic secondary).', lat: 51.7038659, lng: -3.0391949 },
-  { id: 'school-west-monmouth', town: 'pontypool', group: 'pontypool-landmarks', name: 'West Monmouth School', note: 'Blaendare Road, Pontypool (secondary).', lat: 51.6959662, lng: -3.0387121 },
-  { id: 'school-ysgol-gwynllyw', town: 'pontypool', group: 'pontypool-landmarks', name: 'Ysgol Gymraeg Gwynllyw', note: 'Folly Road, Trevethin (Welsh medium secondary).', lat: 51.7143035, lng: -3.0363625 },
-  { id: 'school-blaenavon-heritage', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Blaenavon Heritage VC Primary', note: 'Middle Coed Cae Road, Blaenavon Community Campus.', lat: 51.7734964, lng: -3.0780065 },
-
-  // Batch — supermarkets, pubs, GPs, parks (Cwmbran)
-  { id: 'shop-tesco-llantarnam', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Tesco — Llantarnam', note: 'Tesco supermarket at The Maltings, Llantarnam.', lat: 51.627805, lng: -3.009517 },
-  { id: 'shop-tesco-greenmeadow', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Tesco — Greenmeadow', note: 'Tesco supermarket on Bowleaze, Greenmeadow.', lat: 51.652178, lng: -3.045437 },
-  { id: 'shop-sainsburys-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Sainsbury\'s & Petrol Station', note: 'Sainsbury\'s supermarket with petrol station, Cwmbran town centre.', lat: 51.652716, lng: -3.024379 },
-  { id: 'shop-lidl-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Lidl — Cwmbran', note: 'Lidl supermarket, Cwmbran town centre.', lat: 51.656425, lng: -3.018638 },
-  { id: 'shop-spar-st-dials', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Spar — St Dials', note: 'Spar convenience store, St Dials, Cwmbran.', lat: 51.645206, lng: -3.033123 },
-  { id: 'park-greenmeadow-farm', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Greenmeadow Community Farm', note: 'Community farm and visitor attraction, Greenmeadow, Cwmbran.', lat: 51.652768, lng: -3.041144 },
-  { id: 'pub-queen-inn-upper', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Queen Inn', note: 'Pub in Upper Cwmbran.', lat: 51.666321, lng: -3.047833 },
-  { id: 'pub-oddfellows', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Oddfellows', note: 'Pub in Pontnewydd, Cwmbran.', lat: 51.661171, lng: -3.025204 },
-  { id: 'pub-old-bridgend-inn', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Old Bridgend Inn', note: 'Pub in Pontnewydd, Cwmbran.', lat: 51.66101, lng: -3.027513 },
-  { id: 'gp-clark-avenue', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Clark Avenue Surgery', note: 'GP surgery on Clark Avenue, Pontnewydd, Cwmbran.', lat: 51.663844, lng: -3.026478 },
-  { id: 'gp-llanyravon', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llanyravon Surgery', note: 'GP surgery in Llanyravon, Cwmbran.', lat: 51.648231, lng: -3.006891 },
-
-  // Batch — GPs, care homes, emergency services, civic, attractions
-  { id: 'gp-fairwater', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Fairwater Medical Centre', note: 'GP surgery in Fairwater, Cwmbran.', lat: 51.6446, lng: -3.04814 },
-  { id: 'gp-oak-street', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Oak Street Surgery', note: 'GP surgery, Old Cwmbran (next to Celtic Club).', lat: 51.647301, lng: -3.024921 },
-  { id: 'gp-new-chapel-street', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'New Chapel Street Surgery', note: 'GP surgery, Harold Street, Pontnewydd.', lat: 51.660384, lng: -3.025203 },
-  { id: 'gp-greenmeadow', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Greenmeadow Surgery', note: 'GP surgery in Greenmeadow, Cwmbran.', lat: 51.651791, lng: -3.040402 },
-  { id: 'gp-panteg-health', town: 'pontypool', group: 'pontypool-landmarks', name: 'Panteg Health Centre', note: 'Health centre in Griffithstown, Pontypool.', lat: 51.684321, lng: -3.023903 },
-  { id: 'gp-new-inn-medical', town: 'pontypool', group: 'pontypool-landmarks', name: 'New Inn Medical Centre', note: 'GP surgery in New Inn, Pontypool.', lat: 51.691552, lng: -3.006912 },
-  { id: 'gp-trosnant-lodge', town: 'pontypool', group: 'pontypool-landmarks', name: 'Trosnant Lodge Medical Practice', note: 'GP surgery in Pontypool.', lat: 51.699599, lng: -3.037271 },
-  { id: 'gp-pontypool-medical', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Medical Centre', note: 'GP surgery in Pontypool.', lat: 51.705063, lng: -3.042762 },
-  { id: 'gp-abersychan', town: 'pontypool', group: 'pontypool-landmarks', name: 'Abersychan Group Practice', note: 'GP surgery in Abersychan, Pontypool.', lat: 51.722974, lng: -3.058278 },
-  { id: 'gp-trevethin-health', town: 'pontypool', group: 'pontypool-landmarks', name: 'Trevethin Health Centre', note: 'Health centre on Folly Road, Trevethin, Pontypool.', lat: 51.713675, lng: -3.037503 },
-  { id: 'gp-garndiffaith-health', town: 'pontypool', group: 'pontypool-landmarks', name: 'Garndiffaith Health Centre', note: 'Health centre in Garndiffaith, Pontypool.', lat: 51.735573, lng: -3.066647 },
-  { id: 'gp-blaenavon-medical', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Blaenavon Medical Centre', note: 'Medical centre in Blaenavon.', lat: 51.773559, lng: -3.078424 },
-  { id: 'emergency-pontypool-ambulance', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Ambulance Station', note: 'Welsh Ambulance Service station, Pontypool.', lat: 51.705716, lng: -3.045794 },
-  { id: 'emergency-abersychan-fire', town: 'pontypool', group: 'pontypool-landmarks', name: 'Abersychan Fire Station', note: 'South Wales Fire & Rescue, Abersychan.', lat: 51.721744, lng: -3.057165 },
-  { id: 'emergency-pontypool-police', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Police Station', note: 'Gwent Police station, Pontypool.', lat: 51.701469, lng: -3.040974 },
-  { id: 'care-holly-lodge', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Holly Lodge Residential Care Home', note: 'Residential care home in Coed Eva, Cwmbran.', lat: 51.641286, lng: -3.03509 },
-  { id: 'care-thomas-gabrielle-front', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Thomas Gabrielle Nursing Home — Front', note: 'Nursing home, front entrance, Old Cwmbran.', lat: 51.646009, lng: -3.020445 },
-  { id: 'care-thomas-gabrielle-back', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Thomas Gabrielle Nursing Home — Back', note: 'Nursing home, back entrance, Old Cwmbran.', lat: 51.645739, lng: -3.020816 },
-  { id: 'care-thistle-court', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Thistle Court Care Home', note: 'Care home in Ty Canol, Cwmbran.', lat: 51.644457, lng: -3.058532 },
-  { id: 'care-leadon-court', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Leadon Court Care Home', note: 'Care home in Thornhill, Cwmbran.', lat: 51.657316, lng: -3.050384 },
-  { id: 'care-cwmbran-house', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran House Care Home', note: 'Care home in Pontnewydd, Cwmbran.', lat: 51.667241, lng: -3.030652 },
-  { id: 'care-ty-george-lansbury', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Ty George Lansbury', note: 'Care home in Croesyceiliog, Cwmbran.', lat: 51.66117, lng: -3.002692 },
-  { id: 'care-mayflower', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Mayflower Residential Home', note: 'Residential care home in Llantarnam, Cwmbran.', lat: 51.625931, lng: -3.01001 },
-  { id: 'care-llantarnam-lodge', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llantarnam Lodge Care Home', note: 'Care home in Llantarnam, Cwmbran.', lat: 51.626034, lng: -3.011151 },
-  { id: 'care-panteg-nursing', town: 'pontypool', group: 'pontypool-landmarks', name: 'Panteg Nursing Home', note: 'Nursing home in Griffithstown, Pontypool.', lat: 51.680166, lng: -3.022341 },
-  { id: 'care-rowan-house', town: 'pontypool', group: 'pontypool-landmarks', name: 'Rowan House Nursing Home', note: 'Nursing home in Griffithstown, Pontypool.', lat: 51.686271, lng: -3.024086 },
-  { id: 'care-sunnybank', town: 'pontypool', group: 'pontypool-landmarks', name: 'Sunnybank Residential Care Home', note: 'Residential care home in Griffithstown, Pontypool.', lat: 51.689027, lng: -3.028019 },
-  { id: 'care-regency-house', town: 'pontypool', group: 'pontypool-landmarks', name: 'Regency House Care Home — Main', note: 'Care home in Pontypool, main entrance.', lat: 51.699412, lng: -3.05406 },
-  { id: 'care-regency-house-2', town: 'pontypool', group: 'pontypool-landmarks', name: 'Regency House Care Home — 2nd', note: 'Care home in Pontypool, second entrance.', lat: 51.699282, lng: -3.054567 },
-  { id: 'care-plas-y-garn', town: 'pontypool', group: 'pontypool-landmarks', name: 'Plas y Garn Care Home', note: 'Care home in Penygarn, Pontypool.', lat: 51.704749, lng: -3.039399 },
-  { id: 'care-ty-ceirios', town: 'pontypool', group: 'pontypool-landmarks', name: 'Ty Ceirios Nursing Home', note: 'Nursing home in Pontypool area.', lat: 51.714277, lng: -3.061862 },
-  { id: 'care-ty-bryn', town: 'pontypool', group: 'pontypool-landmarks', name: 'Ty Bryn Nursing Home', note: 'Nursing home in Pontypool area.', lat: 51.725055, lng: -3.060284 },
-  { id: 'shop-one-stop-griffithstown', town: 'pontypool', group: 'pontypool-landmarks', name: 'One Stop — Griffithstown', note: 'Convenience shop in Griffithstown.', lat: 51.685018, lng: -3.022155 },
-  { id: 'shop-premier-pontnewydd', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Premier Grocery Shop', note: 'Convenience shop in Pontnewydd, Cwmbran.', lat: 51.666369, lng: -3.029228 },
-  { id: 'civic-penyparc-complex', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Penyparc Complex', note: 'Community complex in Penyparc, Pontnewydd, Cwmbran.', lat: 51.665004, lng: -3.029539 },
-  { id: 'civic-pontypool-council', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool County Borough Council', note: 'Torfaen County Borough Council, Pontypool.', lat: 51.701509, lng: -3.040149 },
-  { id: 'civic-pontypool-market', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Market', note: 'Indoor market hall, Pontypool.', lat: 51.702077, lng: -3.041431 },
-  { id: 'attraction-big-pit', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Big Pit National Museum', note: 'National Coal Museum, Forgeside, Blaenavon.', lat: 51.773338, lng: -3.105245 },
-  { id: 'attraction-blaenavon-ironworks', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Blaenavon Ironworks', note: 'Historic ironworks site, Blaenavon (Cadw).', lat: 51.776337, lng: -3.08967 },
-
-  // Batch — parks, petrol stations, industrial estates, fire, gym
-  { id: 'park-pontypool-park', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Park', note: 'Major park in Pontypool with leisure centre.', lat: 51.699789, lng: -3.035444 },
-  { id: 'petrol-asda-express-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Asda Cwmbran Express Petrol', note: 'Asda Express petrol station, Cwmbran.', lat: 51.644656, lng: -3.025273 },
-  { id: 'petrol-morrisons-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Morrisons Petrol Station', note: 'Morrisons forecourt, Cwmbran.', lat: 51.655881, lng: -3.017737 },
-  { id: 'petrol-texaco-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Texaco Petrol Station — Cwmbran', note: 'Texaco petrol station, Cwmbran.', lat: 51.660839, lng: -3.017496 },
-  { id: 'petrol-asda-folly-tower', town: 'pontypool', group: 'pontypool-landmarks', name: 'Asda Express Folly Tower Petrol', note: 'Asda Express petrol station, Folly Tower area.', lat: 51.692791, lng: -3.021022 },
-  { id: 'petrol-esso-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Esso Petrol Station — Pontypool', note: 'Esso petrol station, Pontypool.', lat: 51.698845, lng: -3.042133 },
-  { id: 'petrol-tesco-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Tesco Petrol Station — Pontypool', note: 'Tesco forecourt, Pontypool.', lat: 51.699333, lng: -3.039666 },
-  { id: 'petrol-texaco-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Texaco Petrol Station — Pontypool', note: 'Texaco petrol station, Pontypool.', lat: 51.709574, lng: -3.050172 },
-  { id: 'shop-tesco-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Tesco Superstore — Pontypool', note: 'Tesco supermarket in Pontypool.', lat: 51.70042, lng: -3.040388 },
-  { id: 'gp-croesyceiliog', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Croesyceiliog Health Centre', note: 'Health centre in Croesyceiliog, Cwmbran.', lat: 51.660797, lng: -3.006342 },
-  { id: 'emergency-blaenavon-fire', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Blaenavon Fire Station', note: 'South Wales Fire & Rescue, Blaenavon.', lat: 51.776883, lng: -3.086409 },
-  { id: 'entertainment-legacy-gym', town: 'pontypool', group: 'pontypool-landmarks', name: 'Legacy Gym Pontypool', note: 'Gym in Pontypool.', lat: 51.709988, lng: -3.050567 },
-  { id: 'industrial-springvale', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Springvale Industrial Estate', note: 'Industrial estate in Springvale, Cwmbran.', lat: 51.655262, lng: -3.031673 },
-  { id: 'industrial-grange', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Grange Industrial Estate', note: 'Industrial estate, Cwmbran.', lat: 51.646608, lng: -3.016059 },
-  { id: 'industrial-court-road', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Court Road Industrial Estate', note: 'Industrial estate, Cwmbran.', lat: 51.643655, lng: -3.012726 },
-  { id: 'industrial-llantarnam', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llantarnam Industrial Estate', note: 'Industrial estate, Llantarnam, Cwmbran.', lat: 51.635009, lng: -3.017659 },
-  { id: 'industrial-forgehammer', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Forgehammer Industrial Estate', note: 'Industrial estate, Cwmbran.', lat: 51.655392, lng: -3.028088 },
-  { id: 'industrial-somerset', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Somerset Industrial Estate', note: 'Industrial estate, Cwmbran.', lat: 51.657856, lng: -3.017471 },
-  { id: 'industrial-polo-grounds', town: 'pontypool', group: 'pontypool-landmarks', name: 'Polo Grounds Industrial Estate', note: 'Industrial estate, Polo Grounds, Pontypool.', lat: 51.690407, lng: -3.014879 },
-
-  // Ashbridge Inn + Premier Inn Cwmbran
-  { id: 'food-ashbridge-inn', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Ashbridge Inn Restaurant', note: 'Restaurant on the northern edge of Cwmbran, next to Premier Inn.', lat: 51.670777, lng: -3.017584 },
-  { id: 'hotel-premier-inn-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Premier Inn — Cwmbran', note: 'Premier Inn hotel, northern Cwmbran (next to Ashbridge Inn).', lat: 51.670413, lng: -3.017647 },
-  // Cwmbran Stadium
-  { id: 'entertainment-cwmbran-stadium', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Stadium', note: 'Athletics and sports stadium in Cwmbran.', lat: 51.644024, lng: -3.020579 },
-];
-
-const areaBoundaries = {
-  'blaenavon-centre': [[51.766198,-3.083987],[51.767609,-3.082787],[51.76871,-3.076024],[51.769696,-3.072429],[51.76714,-3.06437],[51.772942,-3.069484],[51.779561,-3.078715],[51.780467,-3.082513],[51.779309,-3.085886],[51.775804,-3.091391],[51.773796,-3.090019],[51.76967,-3.084317],[51.766198,-3.083987]],
-  'forgeside': [[51.764911,-3.085238],[51.766202,-3.084047],[51.769629,-3.084379],[51.773722,-3.090162],[51.775918,-3.091456],[51.775918,-3.101564],[51.772233,-3.10815],[51.764911,-3.085238]],
-  'garn-yr-erw': [[51.772315,-3.108206],[51.775999,-3.101562],[51.775999,-3.091284],[51.776577,-3.090416],[51.779436,-3.085847],[51.780508,-3.082753],[51.789159,-3.122768],[51.78403,-3.128254],[51.772315,-3.108206]],
-  'cwmavon': [[51.741571,-3.062986],[51.741508,-3.059754],[51.741381,-3.048881],[51.757714,-3.054612],[51.766081,-3.061378],[51.769678,-3.072566],[51.768672,-3.075973],[51.76757,-3.082723],[51.764553,-3.073535],[51.758982,-3.065034],[51.752062,-3.062105],[51.741571,-3.062986]],
-  'varteg': [[51.741499,-3.063136],[51.751954,-3.06225],[51.758876,-3.065157],[51.764435,-3.073677],[51.767454,-3.08285],[51.764829,-3.085086],[51.741632,-3.072767],[51.741499,-3.063136]],
-  'talywain': [[51.725869,-3.07286],[51.726829,-3.071333],[51.729485,-3.064508],[51.728957,-3.055235],[51.734556,-3.057338],[51.731114,-3.072058],[51.725869,-3.07286]],
-  'garndiffaith': [[51.734642,-3.057326],[51.741429,-3.059865],[51.741498,-3.072873],[51.735347,-3.075834],[51.731203,-3.072023],[51.734642,-3.057326]],
-  'pentwyn': [[51.722768,-3.060456],[51.725003,-3.071978],[51.715241,-3.073461],[51.714824,-3.070742],[51.714816,-3.067287],[51.715264,-3.066207],[51.715878,-3.059233],[51.721015,-3.061059],[51.722768,-3.060456]],
-  'abersychan': [[51.722627,-3.056839],[51.728901,-3.055265],[51.7294,-3.064613],[51.726703,-3.071479],[51.725806,-3.072807],[51.725036,-3.071934],[51.722816,-3.060413],[51.722627,-3.056839]],
-  'snatchwood': [[51.716127,-3.053137],[51.720226,-3.057309],[51.722598,-3.056833],[51.722768,-3.060431],[51.721067,-3.061025],[51.720244,-3.060765],[51.712214,-3.057759],[51.715084,-3.05331],[51.716127,-3.053137]],
-  'pontnewynydd': [[51.706145,-3.042007],[51.707469,-3.04147],[51.710575,-3.038152],[51.711485,-3.047256],[51.715075,-3.053249],[51.708792,-3.06308],[51.707486,-3.053567],[51.71026,-3.051583],[51.707705,-3.047045],[51.708296,-3.045723],[51.708058,-3.044154],[51.707639,-3.043523],[51.706762,-3.042477],[51.706145,-3.042007]],
-  'trevethin': [[51.715094,-3.053183],[51.711523,-3.047175],[51.71062,-3.038065],[51.710923,-3.035371],[51.711576,-3.034764],[51.712624,-3.033466],[51.712321,-3.031901],[51.713284,-3.030465],[51.717708,-3.038874],[51.716979,-3.042295],[51.718858,-3.047202],[51.717886,-3.051446],[51.716086,-3.05312],[51.715094,-3.053183]],
-  'wainfelin': [[51.703889,-3.056129],[51.704179,-3.04964],[51.704035,-3.049441],[51.705046,-3.045153],[51.707036,-3.047488],[51.707682,-3.04709],[51.710115,-3.051607],[51.703889,-3.056129]],
-  'penygarn': [[51.703737,-3.040773],[51.703767,-3.035233],[51.706184,-3.029478],[51.709935,-3.032741],[51.710374,-3.033173],[51.712284,-3.031917],[51.712558,-3.03351],[51.711536,-3.034703],[51.711018,-3.03504],[51.710904,-3.035262],[51.710577,-3.038065],[51.707411,-3.041412],[51.706092,-3.041978],[51.70477,-3.040884],[51.704254,-3.040691],[51.703737,-3.040773]],
-  'pontypool-centre': [[51.697444,-3.048357],[51.698498,-3.034298],[51.697755,-3.02983],[51.699115,-3.027684],[51.703728,-3.04086],[51.704758,-3.040938],[51.706769,-3.042588],[51.708002,-3.044169],[51.70823,-3.045699],[51.707642,-3.047092],[51.707006,-3.047452],[51.705048,-3.045079],[51.703991,-3.049513],[51.700679,-3.048966],[51.697444,-3.048357]],
-  'tranch': [[51.700378,-3.05846],[51.696762,-3.057497],[51.697417,-3.048428],[51.704128,-3.049617],[51.70388,-3.056148],[51.701576,-3.058645],[51.700747,-3.058786],[51.700378,-3.05846]],
-  'cwmynyscoy': [[51.691028,-3.049331],[51.68371,-3.03797],[51.696247,-3.031462],[51.697558,-3.03002],[51.697753,-3.030139],[51.698385,-3.033728],[51.69784,-3.031885],[51.697444,-3.035886],[51.697041,-3.036001],[51.694366,-3.042454],[51.69347,-3.043792],[51.693175,-3.045354],[51.692435,-3.046406],[51.692139,-3.048553],[51.691028,-3.049331]],
-  'pontymoile': [[51.689405,-3.022679],[51.693582,-3.020177],[51.699253,-3.011534],[51.701112,-3.009267],[51.703907,-3.007821],[51.704922,-3.007644],[51.705099,-3.008518],[51.704784,-3.012493],[51.702245,-3.018646],[51.699802,-3.021285],[51.698694,-3.023991],[51.699088,-3.027582],[51.697603,-3.029992],[51.697042,-3.028435],[51.695063,-3.025512],[51.693469,-3.022855],[51.692708,-3.022151],[51.691246,-3.02257],[51.689405,-3.022679]],
-  'sebastopol': [[51.673962,-3.019081],[51.67572,-3.019873],[51.676609,-3.020293],[51.677008,-3.020977],[51.677141,-3.021628],[51.677816,-3.023514],[51.678608,-3.024759],[51.68005,-3.025765],[51.680894,-3.02629],[51.681564,-3.026472],[51.682346,-3.027354],[51.682361,-3.031022],[51.682096,-3.032709],[51.682408,-3.034778],[51.682356,-3.040997],[51.674161,-3.034268],[51.675082,-3.029275],[51.675132,-3.024835],[51.674173,-3.019476],[51.673962,-3.019081]],
-  'griffithstown': [[51.67318,-3.018055],[51.674549,-3.016691],[51.676015,-3.016156],[51.678431,-3.016046],[51.680065,-3.015811],[51.680746,-3.015409],[51.681671,-3.015683],[51.684664,-3.019495],[51.685962,-3.021117],[51.6875,-3.022326],[51.689214,-3.022783],[51.691233,-3.022682],[51.692702,-3.022255],[51.693395,-3.022896],[51.695944,-3.027101],[51.697002,-3.028554],[51.697553,-3.029903],[51.696629,-3.031013],[51.696194,-3.031374],[51.682419,-3.038539],[51.682434,-3.034486],[51.682134,-3.032767],[51.682415,-3.031059],[51.682394,-3.027407],[51.68152,-3.026385],[51.680905,-3.026174],[51.678707,-3.024733],[51.677857,-3.02343],[51.677198,-3.021687],[51.677017,-3.020839],[51.676635,-3.02026],[51.675869,-3.019901],[51.673942,-3.019045],[51.67318,-3.018055]],
-  'new-inn': [[51.681301,-3.013393],[51.681589,-3.013079],[51.682088,-3.01054],[51.682166,-3.007083],[51.683046,-3.006103],[51.685332,-2.998094],[51.697245,-2.999024],[51.698106,-3.000994],[51.699212,-3.011477],[51.695539,-3.017421],[51.693589,-3.020057],[51.689229,-3.022719],[51.686052,-3.021095],[51.683819,-3.018331],[51.681672,-3.015586],[51.681301,-3.013393]],
-  'pontnewydd': [[51.656918,-3.025885],[51.660852,-3.024158],[51.6604,-3.021936],[51.660427,-3.020761],[51.659937,-3.018574],[51.661559,-3.01948],[51.662889,-3.020662],[51.662847,-3.021387],[51.662104,-3.023432],[51.662147,-3.023628],[51.664643,-3.022426],[51.666626,-3.021892],[51.667251,-3.022281],[51.667736,-3.022523],[51.668942,-3.032043],[51.666001,-3.041671],[51.664303,-3.0415],[51.66423,-3.042474],[51.663268,-3.042376],[51.66152,-3.043147],[51.661426,-3.0426],[51.660174,-3.042512],[51.657542,-3.031787],[51.657821,-3.029024],[51.656918,-3.025885]],
-  'pontrhydyrun': [[51.657112,-3.017856],[51.65794,-3.017358],[51.657986,-3.01643],[51.659872,-3.016424],[51.663242,-3.016889],[51.669679,-3.013474],[51.674084,-3.01934],[51.675088,-3.024863],[51.675037,-3.029319],[51.673476,-3.037854],[51.66899,-3.031963],[51.667794,-3.022509],[51.666685,-3.021844],[51.664903,-3.022254],[51.662163,-3.023596],[51.662876,-3.021356],[51.662892,-3.020621],[51.66158,-3.019453],[51.659965,-3.018499],[51.658898,-3.019018],[51.657196,-3.0191],[51.657248,-3.017947],[51.657112,-3.017856]],
-  'upper-cwmbran': [[51.657399,-3.054364],[51.661197,-3.050904],[51.661578,-3.050477],[51.662908,-3.048609],[51.663829,-3.047355],[51.66245,-3.046025],[51.661963,-3.045481],[51.661522,-3.043242],[51.663245,-3.042437],[51.663839,-3.042579],[51.664255,-3.042514],[51.664342,-3.041579],[51.665265,-3.0418],[51.66597,-3.041768],[51.667217,-3.046171],[51.66739,-3.058482],[51.659338,-3.061569],[51.657399,-3.054364]],
-  'croesyceiliog': [[51.650476,-3.001568],[51.650974,-3.000954],[51.652578,-3.000043],[51.65487,-2.999123],[51.657334,-2.998994],[51.659389,-2.999555],[51.661766,-3.001024],[51.665203,-3.003689],[51.667138,-3.005234],[51.667469,-3.006225],[51.667396,-3.007581],[51.669659,-3.013424],[51.663219,-3.01686],[51.659913,-3.016377],[51.657971,-3.016368],[51.657918,-3.01733],[51.65708,-3.017857],[51.656789,-3.017644],[51.656294,-3.017575],[51.656161,-3.01712],[51.656185,-3.016002],[51.656172,-3.015952],[51.65165,-3.01492],[51.651742,-3.009307],[51.653016,-3.003157],[51.652887,-3.003012],[51.651634,-3.002225],[51.650636,-3.002099],[51.650476,-3.001568]],
-  'llanyrafon': [[51.647542,-3.017363],[51.646379,-3.016654],[51.645245,-3.015561],[51.644639,-3.014838],[51.644578,-3.012978],[51.642558,-3.010773],[51.640602,-3.008464],[51.638217,-3.005267],[51.639437,-3.002875],[51.64067,-3.001624],[51.643059,-3.002241],[51.645919,-3.002993],[51.647482,-3.003142],[51.648938,-3.002284],[51.649801,-3.001723],[51.65018,-3.00175],[51.65061,-3.002224],[51.651708,-3.002347],[51.652947,-3.003138],[51.651801,-3.008335],[51.65165,-3.009799],[51.651646,-3.009907],[51.651654,-3.010003],[51.651635,-3.010284],[51.651645,-3.010593],[51.651645,-3.01117],[51.651619,-3.012299],[51.651577,-3.012996],[51.651568,-3.014832],[51.651445,-3.018375],[51.647542,-3.017363]],
-  'old-cwmbran': [[51.6449,-3.016837],[51.647387,-3.017733],[51.647426,-3.018105],[51.647735,-3.018257],[51.648937,-3.022048],[51.649675,-3.02283],[51.651123,-3.023847],[51.650979,-3.025011],[51.649896,-3.024862],[51.649854,-3.025274],[51.648813,-3.02714],[51.647723,-3.028512],[51.647703,-3.029084],[51.646414,-3.029984],[51.64475,-3.031437],[51.644531,-3.030711],[51.644072,-3.028711],[51.64418,-3.026668],[51.644567,-3.024039],[51.644692,-3.022209],[51.644214,-3.019378],[51.644454,-3.017989],[51.6449,-3.016837]],
-  'cwmbran-centre': [[51.651611,-3.018786],[51.651623,-3.015006],[51.656163,-3.016004],[51.656142,-3.017149],[51.656274,-3.017623],[51.656775,-3.017678],[51.65721,-3.017963],[51.657178,-3.019015],[51.656225,-3.018994],[51.655631,-3.019481],[51.655464,-3.020325],[51.65537,-3.022704],[51.655553,-3.024059],[51.656146,-3.024616],[51.656764,-3.025522],[51.657329,-3.027283],[51.657759,-3.029052],[51.657661,-3.030596],[51.657105,-3.030949],[51.655796,-3.030413],[51.655249,-3.030579],[51.65502,-3.030443],[51.65418,-3.03091],[51.653353,-3.029073],[51.65156,-3.027093],[51.650912,-3.025519],[51.65101,-3.024962],[51.651187,-3.023773],[51.650793,-3.023506],[51.651317,-3.023378],[51.651489,-3.0227],[51.651676,-3.019358],[51.651611,-3.018786]],
-  'oakfield': [[51.641929,-3.021948],[51.638289,-3.020904],[51.637314,-3.019175],[51.635922,-3.016449],[51.636533,-3.01329],[51.638401,-3.013459],[51.639049,-3.012648],[51.640104,-3.012726],[51.64163,-3.014916],[51.644852,-3.016792],[51.644425,-3.018001],[51.644179,-3.019419],[51.644665,-3.022349],[51.644518,-3.024055],[51.643494,-3.024932],[51.642783,-3.025048],[51.642096,-3.024908],[51.641929,-3.021948]],
-  'llantarnam': [[51.63783,-3.021074],[51.634827,-3.020426],[51.630176,-3.019027],[51.628394,-3.017983],[51.625154,-3.014875],[51.621733,-3.010913],[51.622562,-3.005084],[51.623136,-3.004435],[51.625411,-3.004245],[51.627259,-3.003783],[51.629731,-3.001951],[51.632404,-2.999962],[51.634518,-2.999468],[51.636127,-2.999835],[51.638001,-3.001055],[51.639378,-3.002893],[51.638186,-3.005219],[51.640429,-3.008328],[51.642805,-3.011156],[51.644492,-3.013014],[51.644612,-3.014828],[51.645233,-3.015675],[51.645123,-3.016863],[51.642142,-3.015144],[51.641665,-3.014879],[51.640097,-3.012617],[51.639053,-3.012566],[51.638399,-3.013408],[51.636501,-3.013218],[51.635897,-3.016434],[51.638211,-3.020908],[51.638187,-3.021135],[51.63783,-3.021074]],
-  'thornhill': [[51.654405,-3.045317],[51.656005,-3.044951],[51.656373,-3.045016],[51.657681,-3.045256],[51.6589,-3.044794],[51.660179,-3.042592],[51.661383,-3.042666],[51.661938,-3.045516],[51.662349,-3.045928],[51.662495,-3.046156],[51.663794,-3.04736],[51.661382,-3.050648],[51.657083,-3.054648],[51.654956,-3.05583],[51.652838,-3.048323],[51.654282,-3.046089],[51.654405,-3.045317]],
-  'greenmeadow': [[51.652502,-3.040275],[51.654884,-3.042656],[51.654247,-3.046051],[51.652761,-3.048333],[51.654897,-3.055848],[51.649216,-3.060352],[51.649541,-3.058211],[51.64929,-3.056202],[51.648486,-3.054644],[51.648131,-3.053432],[51.64786,-3.045736],[51.647173,-3.042202],[51.648072,-3.042532],[51.648832,-3.040929],[51.649543,-3.041041],[51.649996,-3.041995],[51.650379,-3.041984],[51.650601,-3.038107],[51.651332,-3.040029],[51.651861,-3.040706],[51.652502,-3.040275]],
-  'st-dials': [[51.649965,-3.024958],[51.650826,-3.025486],[51.65151,-3.027212],[51.652622,-3.028363],[51.653293,-3.029208],[51.654165,-3.031123],[51.654352,-3.031774],[51.654253,-3.032623],[51.65365,-3.034151],[51.653539,-3.036254],[51.653305,-3.037754],[51.652561,-3.038775],[51.652268,-3.040378],[51.651864,-3.040633],[51.651343,-3.039992],[51.650588,-3.03802],[51.650484,-3.039725],[51.650313,-3.041224],[51.650364,-3.04196],[51.650037,-3.041988],[51.649563,-3.040998],[51.648837,-3.040875],[51.64803,-3.042466],[51.647152,-3.042173],[51.646555,-3.040655],[51.64566,-3.038617],[51.644717,-3.038426],[51.644959,-3.034107],[51.644994,-3.032696],[51.644727,-3.031483],[51.645927,-3.030439],[51.646957,-3.029631],[51.647761,-3.029099],[51.647769,-3.028527],[51.648707,-3.027339],[51.64987,-3.025282],[51.649965,-3.024958]],
-  'fairwater': [[51.648089,-3.053372],[51.647051,-3.053447],[51.645425,-3.052398],[51.642303,-3.049739],[51.642272,-3.0418],[51.643418,-3.040826],[51.644007,-3.04029],[51.644712,-3.039166],[51.644728,-3.038467],[51.645642,-3.038692],[51.647144,-3.042225],[51.647841,-3.045757],[51.648089,-3.053372]],
-  'henllys': [[51.635288,-3.046616],[51.636079,-3.048993],[51.638607,-3.053338],[51.63966,-3.05426],[51.641245,-3.054233],[51.641278,-3.059741],[51.642174,-3.063258],[51.643908,-3.06926],[51.641303,-3.070784],[51.639299,-3.068229],[51.636643,-3.064836],[51.63433,-3.059036],[51.633324,-3.057343],[51.633319,-3.055673],[51.633856,-3.055673],[51.633896,-3.054019],[51.634168,-3.052779],[51.634847,-3.051426],[51.63534,-3.050429],[51.635445,-3.049392],[51.635259,-3.047982],[51.635239,-3.047195],[51.635288,-3.046616]],
-  'ty-canol': [[51.648102,-3.053449],[51.648474,-3.054809],[51.649188,-3.056159],[51.649473,-3.058218],[51.649163,-3.060317],[51.648133,-3.061787],[51.642283,-3.063527],[51.641326,-3.059721],[51.641271,-3.050534],[51.642263,-3.04978],[51.64334,-3.050616],[51.64562,-3.052643],[51.647038,-3.053498],[51.648102,-3.053449]],
-  'coed-eva': [[51.6376,-3.042429],[51.638597,-3.037988],[51.63903,-3.037302],[51.639363,-3.037028],[51.641101,-3.034399],[51.642805,-3.036941],[51.643234,-3.038432],[51.643305,-3.039964],[51.643242,-3.040341],[51.643415,-3.040775],[51.642237,-3.041774],[51.642272,-3.049663],[51.641245,-3.050581],[51.641274,-3.054163],[51.639655,-3.054198],[51.638669,-3.05334],[51.636232,-3.049157],[51.635352,-3.046974],[51.635835,-3.045009],[51.6376,-3.042429]],
-  'two-locks': [[51.641138,-3.034277],[51.640726,-3.034493],[51.640029,-3.033858],[51.639758,-3.031969],[51.639385,-3.03055],[51.638521,-3.028775],[51.640659,-3.026685],[51.641249,-3.026303],[51.641679,-3.026193],[51.641916,-3.026209],[51.642137,-3.025019],[51.64253,-3.025139],[51.643231,-3.025107],[51.643722,-3.024954],[51.644,-3.024714],[51.64422,-3.024304],[51.644434,-3.024261],[51.644189,-3.026306],[51.644016,-3.028211],[51.644063,-3.029368],[51.644515,-3.030803],[51.644919,-3.032435],[51.644969,-3.033363],[51.644807,-3.037311],[51.644648,-3.039118],[51.643967,-3.040264],[51.643442,-3.040745],[51.643259,-3.040242],[51.643317,-3.040139],[51.643361,-3.039385],[51.643262,-3.038376],[51.642934,-3.037109],[51.641138,-3.034277]],
-  'hollybush': [[51.635362,-3.046964],[51.634449,-3.039504],[51.636502,-3.026666],[51.638531,-3.028936],[51.639368,-3.030606],[51.639775,-3.032228],[51.640038,-3.033903],[51.640704,-3.034533],[51.641127,-3.034341],[51.639362,-3.036992],[51.639081,-3.037205],[51.638599,-3.037867],[51.637594,-3.042415],[51.636894,-3.04344],[51.635898,-3.044768],[51.635814,-3.045039],[51.635362,-3.046964]],
-
-  'ty-coch': [[51.63494,-3.020523],[51.641895,-3.022004],[51.642038,-3.024991],[51.641894,-3.026137],[51.641274,-3.026158],[51.640229,-3.026928],[51.638481,-3.028752],[51.637621,-3.027887],[51.636219,-3.026233],[51.635081,-3.024484],[51.634729,-3.022546],[51.63494,-3.020523]],
-  'southville': [[51.647858,-3.018178],[51.648025,-3.017872],[51.651117,-3.018547],[51.651566,-3.018851],[51.651649,-3.019258],[51.651458,-3.022694],[51.651282,-3.023426],[51.65097,-3.023501],[51.650738,-3.023551],[51.648949,-3.022009],[51.647804,-3.018432],[51.647858,-3.018178]],
-  'northville': [[51.660809,-3.024114],[51.659086,-3.025083],[51.658125,-3.025461],[51.656876,-3.025851],[51.656762,-3.025462],[51.656191,-3.024678],[51.655954,-3.024439],[51.655561,-3.024092],[51.655391,-3.02275],[51.655488,-3.020391],[51.655809,-3.019423],[51.656228,-3.019137],[51.656791,-3.019096],[51.657685,-3.019172],[51.658897,-3.019076],[51.659904,-3.018571],[51.659971,-3.019239],[51.660225,-3.019908],[51.660382,-3.020808],[51.660373,-3.021994],[51.660563,-3.022996],[51.660809,-3.024114]],
-  'springvale': [[51.657643,-3.030743],[51.657509,-3.03179],[51.657552,-3.032099],[51.657627,-3.032371],[51.657807,-3.033127],[51.658184,-3.034588],[51.658966,-3.037847],[51.659656,-3.040734],[51.660054,-3.042555],[51.658824,-3.044652],[51.657588,-3.045112],[51.656372,-3.044746],[51.654511,-3.045183],[51.65495,-3.042627],[51.652512,-3.04022],[51.65234,-3.040058],[51.65257,-3.038808],[51.653421,-3.037708],[51.653591,-3.036299],[51.653679,-3.034111],[51.654335,-3.032531],[51.654393,-3.031707],[51.654192,-3.030991],[51.655001,-3.030539],[51.655386,-3.030741],[51.655772,-3.030544],[51.6571,-3.031098],[51.657643,-3.030743]],
-
-  'pentrepiod': [[51.708805,-3.063084],[51.712209,-3.05783],[51.715854,-3.059166],[51.715196,-3.066251],[51.714769,-3.067239],[51.714808,-3.070806],[51.708805,-3.063084]],
-  'old-furnace': [[51.696871,-3.057746],[51.700535,-3.059046],[51.701652,-3.058878],[51.703991,-3.056069],[51.703887,-3.073679],[51.69856,-3.079507],[51.692349,-3.076111],[51.695233,-3.068605],[51.696871,-3.057746]],
-  'lower-race': [[51.697075,-3.052401],[51.691063,-3.049372],[51.692161,-3.048589],[51.692413,-3.047005],[51.692464,-3.046518],[51.693227,-3.04538],[51.693567,-3.043812],[51.694406,-3.042485],[51.69611,-3.038247],[51.697092,-3.036026],[51.697463,-3.035933],[51.697875,-3.032056],[51.698463,-3.034319],[51.697075,-3.052401]],
-  'llanfrechfa': [[51.636162,-2.999745],[51.635575,-2.98602],[51.640209,-2.979337],[51.651028,-2.995007],[51.650895,-3.000956],[51.649285,-3.002027],[51.647425,-3.003026],[51.645092,-3.002717],[51.637744,-3.000795],[51.636162,-2.999745]],
-};
-
 const colors = {
   blaenavon: '#d946ef',
   pontypool: '#f0abfc',
