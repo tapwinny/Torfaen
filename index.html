@@ -1657,14 +1657,15 @@ function activateArea(id, openPopup = true, scrollToMap = false) {
   const area = areas.find(a => a.id === id);
   if (!area) return;
 
-  // Highlight list item — only scroll the list when we're NOT also scrolling to the map
-  // (otherwise the two scrolls fight each other)
+  // Highlight list item.
+  // We only scroll the list item into view if the user explicitly came from the list
+  // (scrollToMap=true means they clicked in the list, so we're sending them back UP to the map,
+  // and the list item will already be in view once they scroll back later).
+  // If they clicked a pin/polygon on the map, don't scroll at all — they're already looking at the map.
   const item = document.querySelector(`.area-item[data-id="${id}"]`);
   if (item) {
     item.classList.add('active');
-    if (!scrollToMap) {
-      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
+    // No scrollIntoView here — the user shouldn't be yanked anywhere unless explicitly requested
   }
 
   // Highlight marker
