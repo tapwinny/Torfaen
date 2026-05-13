@@ -117,42 +117,51 @@ body {
 
 /* ====== LAYOUT ====== */
 .container {
-  max-width: 1280px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 32px 24px 80px;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 32px;
   margin-top: 24px;
 }
 
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
+/* On large screens, the areas section uses multi-column flow so the list reads naturally */
+.areas {
+  /* placeholder — see .areas-inner below for the actual columns */
+}
+
+.areas-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .areas-inner { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 700px) {
+  .areas-inner { grid-template-columns: 1fr; }
 }
 
 /* ====== MAP ====== */
 .map-section {
   border: 1px solid var(--line-bright);
   background: var(--paper);
-  position: sticky;
-  top: 20px;
-  align-self: start;
   box-shadow:
     4px 4px 0 var(--line),
     0 0 30px rgba(168, 85, 247, 0.15);
 }
 
-@media (max-width: 900px) {
-  .map-section { position: static; }
-}
-
 .map-header {
   background: linear-gradient(135deg, #1a1424 0%, #2d1b4e 100%);
   color: var(--ink);
-  padding: 14px 20px;
+  padding: 18px 24px;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -162,7 +171,7 @@ body {
 .map-header h2 {
   font-family: 'Fraunces', serif;
   font-weight: 600;
-  font-size: 20px;
+  font-size: 24px;
   letter-spacing: 0.01em;
   color: var(--gold);
   text-shadow: 0 0 12px rgba(240, 171, 252, 0.3);
@@ -478,7 +487,9 @@ body {
 }
 
 #map {
-  height: 560px;
+  height: 75vh;
+  min-height: 600px;
+  max-height: 900px;
   width: 100%;
   background: var(--paper-dark);
   position: relative;
@@ -510,7 +521,10 @@ body {
 }
 
 @media (max-width: 900px) {
-  #map { height: 400px; }
+  #map {
+    height: 60vh;
+    min-height: 450px;
+  }
 }
 
 .map-legend {
@@ -977,6 +991,7 @@ footer {
 
     <!-- AREAS -->
     <div class="areas-section">
+      <div class="areas-inner">
 
       <!-- BLAENAVON -->
       <section class="town blaenavon">
@@ -1008,6 +1023,7 @@ footer {
         <div class="town-categories" data-town-id="cwmbran"></div>
       </section>
 
+      </div>
     </div>
   </div>
 
@@ -1048,61 +1064,61 @@ footer {
 // ============ DATA ============
 const areas = [
   // BLAENAVON
-  { id: 'blaenavon-centre', town: 'blaenavon', group: 'blaenavon', name: 'Blaenavon', note: 'Broad Street, King Street, Queen Street, Ironworks. UNESCO World Heritage Site.', lat: 51.7735761, lng: -3.0796909 },
-  { id: 'forgeside', town: 'blaenavon', group: 'blaenavon', name: 'Forgeside', note: 'Across the valley from town — home of Big Pit.', lat: 51.7719828, lng: -3.0947971 },
-  { id: 'garn-yr-erw', town: 'blaenavon', group: 'blaenavon', name: 'Garn-yr-erw', note: 'Upland settlement to the NW, near Keepers Pond and the heritage railway.', lat: 51.7809046, lng: -3.1082726 },
-  { id: 'cwmavon', town: 'blaenavon', group: 'blaenavon', name: 'Cwmavon', note: 'Between Blaenavon and Varteg — canal-side conservation village.', lat: 51.7580654, lng: -3.0602074 },
+  { id: 'blaenavon-centre', town: 'blaenavon', group: 'blaenavon', name: 'Blaenavon', note: 'Broad Street, King Street, Queen Street, Ironworks. UNESCO World Heritage Site.', lat: 51.773333, lng: -3.079682 },
+  { id: 'forgeside', town: 'blaenavon', group: 'blaenavon', name: 'Forgeside', note: 'Across the valley from town — home of Big Pit.', lat: 51.768947, lng: -3.096902 },
+  { id: 'garn-yr-erw', town: 'blaenavon', group: 'blaenavon', name: 'Garn-yr-erw', note: 'Upland settlement to the NW, near Keepers Pond and the heritage railway.', lat: 51.786352, lng: -3.110054 },
+  { id: 'cwmavon', town: 'blaenavon', group: 'blaenavon', name: 'Cwmavon', note: 'Between Blaenavon and Varteg — canal-side conservation village.', lat: 51.748927, lng: -3.053393 },
 
   // PONTYPOOL NORTH
-  { id: 'varteg', town: 'pontypool', group: 'pontypool-north', name: 'Varteg', note: 'Hilltop village above Garndiffaith.', lat: 51.7551964, lng: -3.0713654 },
-  { id: 'talywain', town: 'pontypool', group: 'pontypool-north', name: 'Talywain', note: 'Between Garndiffaith and Abersychan.', lat: 51.7306963, lng: -3.0652714 },
-  { id: 'garndiffaith', town: 'pontypool', group: 'pontypool-north', name: 'Garndiffaith', note: 'Village famous for its stone viaduct.', lat: 51.7369688, lng: -3.0665588 },
-  { id: 'pentwyn', town: 'pontypool', group: 'pontypool-north', name: 'Pentwyn', note: 'Small settlement near Abersychan.', lat: 51.7197441, lng: -3.0651855 },
-  { id: 'abersychan', town: 'pontypool', group: 'pontypool-north', name: 'Abersychan', note: 'Town north of Pontypool. Community includes Cwmavon, Garndiffaith, Pentwyn, Talywain, Varteg.', lat: 51.7265497, lng: -3.0632114 },
-  { id: 'snatchwood', town: 'pontypool', group: 'pontypool-north', name: 'Snatchwood', note: 'Small suburb between Abersychan and Pontnewynydd.', lat: 51.7176437, lng: -3.0579758 },
-  { id: 'pontnewynydd', town: 'pontypool', group: 'pontypool-north', name: 'Pontnewynydd', note: 'NW of Pontypool — NOT Pontnewydd (Cwmbran)!', lat: 51.7119802, lng: -3.0548859 },
-  { id: 'trevethin', town: 'pontypool', group: 'pontypool-north', name: 'Trevethin', note: 'Hillside NE of Pontypool — historic parish.', lat: 51.7143201, lng: -3.0433846 },
+  { id: 'varteg', town: 'pontypool', group: 'pontypool-north', name: 'Varteg', note: 'Hilltop village above Garndiffaith.', lat: 51.752746, lng: -3.078235 },
+  { id: 'talywain', town: 'pontypool', group: 'pontypool-north', name: 'Talywain', note: 'Between Garndiffaith and Abersychan.', lat: 51.730502, lng: -3.059935 },
+  { id: 'garndiffaith', town: 'pontypool', group: 'pontypool-north', name: 'Garndiffaith', note: 'Village famous for its stone viaduct.', lat: 51.735664, lng: -3.065346 },
+  { id: 'pentwyn', town: 'pontypool', group: 'pontypool-north', name: 'Pentwyn', note: 'Small settlement near Abersychan.', lat: 51.721268, lng: -3.067296 },
+  { id: 'abersychan', town: 'pontypool', group: 'pontypool-north', name: 'Abersychan', note: 'Town north of Pontypool. Community includes Cwmavon, Garndiffaith, Pentwyn, Talywain, Varteg.', lat: 51.723982, lng: -3.066375 },
+  { id: 'snatchwood', town: 'pontypool', group: 'pontypool-north', name: 'Snatchwood', note: 'Small suburb between Abersychan and Pontnewynydd.', lat: 51.716084, lng: -3.059184 },
+  { id: 'pontnewynydd', town: 'pontypool', group: 'pontypool-north', name: 'Pontnewynydd', note: 'NW of Pontypool — NOT Pontnewydd (Cwmbran)!', lat: 51.711801, lng: -3.058094 },
+  { id: 'trevethin', town: 'pontypool', group: 'pontypool-north', name: 'Trevethin', note: 'Hillside NE of Pontypool — historic parish.', lat: 51.712268, lng: -3.042581 },
 
   // PONTYPOOL TOWN
-  { id: 'wainfelin', town: 'pontypool', group: 'pontypool-town', name: 'Wainfelin', note: 'Northern part of Pontypool town.', lat: 51.7062893, lng: -3.0504227 },
-  { id: 'penygarn', town: 'pontypool', group: 'pontypool-town', name: 'Penygarn', note: 'East side, above New Inn.', lat: 51.7070872, lng: -3.0360031 },
-  { id: 'pontypool-centre', town: 'pontypool', group: 'pontypool-town', name: 'Pontypool', note: 'Civic Centre, market, Pontypool Park.', lat: 51.7017149, lng: -3.0435133 },
-  { id: 'tranch', town: 'pontypool', group: 'pontypool-town', name: 'Tranch', note: 'West side of town.', lat: 51.7005978, lng: -3.0533409 },
-  { id: 'cwmynyscoy', town: 'pontypool', group: 'pontypool-town', name: 'Cwmynyscoy', note: 'Small district south-west of the town.', lat: 51.6916069, lng: -3.039608 },
+  { id: 'wainfelin', town: 'pontypool', group: 'pontypool-town', name: 'Wainfelin', note: 'Northern part of Pontypool town.', lat: 51.706379, lng: -3.052836 },
+  { id: 'penygarn', town: 'pontypool', group: 'pontypool-town', name: 'Penygarn', note: 'East side, above New Inn.', lat: 51.706971, lng: -3.037395 },
+  { id: 'pontypool-centre', town: 'pontypool', group: 'pontypool-town', name: 'Pontypool', note: 'Civic Centre, market, Pontypool Park.', lat: 51.698163, lng: -3.042237 },
+  { id: 'tranch', town: 'pontypool', group: 'pontypool-town', name: 'Tranch', note: 'West side of town.', lat: 51.699954, lng: -3.052916 },
+  { id: 'cwmynyscoy', town: 'pontypool', group: 'pontypool-town', name: 'Cwmynyscoy', note: 'Small district south-west of the town.', lat: 51.690069, lng: -3.03517 },
 
   // PONTYPOOL SOUTH
   { id: 'pontymoile', town: 'pontypool', group: 'pontypool-south', name: 'Pontymoile', note: 'Canal basin just south of the centre.', lat: 51.697252, lng: -3.016583 },
-  { id: 'sebastopol', town: 'pontypool', group: 'pontypool-south', name: 'Sebastopol (Panteg)', note: 'Between Griffithstown and Pontymoile.', lat: 51.6788357, lng: -3.0299091 },
-  { id: 'griffithstown', town: 'pontypool', group: 'pontypool-south', name: 'Griffithstown', note: 'South of Pontypool, north of New Inn.', lat: 51.68743, lng: -3.0287933 },
+  { id: 'sebastopol', town: 'pontypool', group: 'pontypool-south', name: 'Sebastopol (Panteg)', note: 'Between Griffithstown and Pontymoile.', lat: 51.678185, lng: -3.037344 },
+  { id: 'griffithstown', town: 'pontypool', group: 'pontypool-south', name: 'Griffithstown', note: 'South of Pontypool, north of New Inn.', lat: 51.689429, lng: -3.033913 },
   { id: 'new-inn', town: 'pontypool', group: 'pontypool-south', name: 'New Inn', note: 'Railway station ("Pontypool & New Inn") is here.', lat: 51.690854, lng: -3.009586 },
 
   // CWMBRAN N
-  { id: 'pontnewydd', town: 'cwmbran', group: 'cwmbran-n', name: 'Pontnewydd', note: 'North Cwmbran — NOT Pontnewynydd (Pontypool)!', lat: 51.6630795, lng: -3.0322266 },
-  { id: 'pontrhydyrun', town: 'cwmbran', group: 'cwmbran-n', name: 'Pontrhydyrun', note: 'Between Pontnewydd and Sebastopol.', lat: 51.6709583, lng: -3.0243301 },
-  { id: 'upper-cwmbran', town: 'cwmbran', group: 'cwmbran-n', name: 'Upper Cwmbran', note: 'Hillside area NW of town.', lat: 51.664517, lng: -3.0525684 },
+  { id: 'pontnewydd', town: 'cwmbran', group: 'cwmbran-n', name: 'Pontnewydd', note: 'North Cwmbran — NOT Pontnewynydd (Pontypool)!', lat: 51.663331, lng: -3.034956 },
+  { id: 'pontrhydyrun', town: 'cwmbran', group: 'cwmbran-n', name: 'Pontrhydyrun', note: 'Between Pontnewydd and Sebastopol.', lat: 51.670294, lng: -3.027289 },
+  { id: 'upper-cwmbran', town: 'cwmbran', group: 'cwmbran-n', name: 'Upper Cwmbran', note: 'Hillside area NW of town.', lat: 51.666724, lng: -3.052907 },
 
   // CWMBRAN E
   { id: 'croesyceiliog', town: 'cwmbran', group: 'cwmbran-e', name: 'Croesyceiliog', note: 'NE Cwmbran — major neighbourhood, school cluster.', lat: 51.659428, lng: -3.008425 },
   { id: 'llanyrafon', town: 'cwmbran', group: 'cwmbran-e', name: 'Llanyrafon (Llanyravon)', note: 'East Cwmbran — historic mill.', lat: 51.647055, lng: -3.008324 },
 
   // CWMBRAN SE
-  { id: 'old-cwmbran', town: 'cwmbran', group: 'cwmbran-se', name: 'Old Cwmbran', note: 'Original village core before the new town.', lat: 51.6472646, lng: -3.0236435 },
-  { id: 'cwmbran-centre', town: 'cwmbran', group: 'cwmbran-se', name: 'Cwmbran town centre', note: 'Shopping centre, bus station, rail station.', lat: 51.6537883, lng: -3.0226564 },
+  { id: 'old-cwmbran', town: 'cwmbran', group: 'cwmbran-se', name: 'Old Cwmbran', note: 'Original village core before the new town.', lat: 51.647127, lng: -3.02511 },
+  { id: 'cwmbran-centre', town: 'cwmbran', group: 'cwmbran-se', name: 'Cwmbran town centre', note: 'Shopping centre, bus station, rail station.', lat: 51.654044, lng: -3.026166 },
   { id: 'oakfield', town: 'cwmbran', group: 'cwmbran-se', name: 'Oakfield', note: 'SE Cwmbran near Llantarnam.', lat: 51.640685, lng: -3.018435 },
-  { id: 'llantarnam', town: 'cwmbran', group: 'cwmbran-se', name: 'Llantarnam', note: 'Southernmost — abbey & conservation area. Gateway to Newport.', lat: 51.6333089, lng: -3.0099964 },
+  { id: 'llantarnam', town: 'cwmbran', group: 'cwmbran-se', name: 'Llantarnam', note: 'Southernmost — abbey & conservation area. Gateway to Newport.', lat: 51.63035, lng: -3.010301 },
 
   // CWMBRAN W
   { id: 'thornhill', town: 'cwmbran', group: 'cwmbran-w', name: 'Thornhill', note: 'Western hillside neighbourhood.', lat: 51.656855, lng: -3.050094 },
-  { id: 'greenmeadow', town: 'cwmbran', group: 'cwmbran-w', name: 'Greenmeadow', note: 'West Cwmbran — Greenmeadow Community Farm.', lat: 51.6509393, lng: -3.049221 },
+  { id: 'greenmeadow', town: 'cwmbran', group: 'cwmbran-w', name: 'Greenmeadow', note: 'West Cwmbran — Greenmeadow Community Farm.', lat: 51.652065, lng: -3.052937 },
   { id: 'st-dials', town: 'cwmbran', group: 'cwmbran-w', name: 'St Dials', note: 'West, near Old Cwmbran.', lat: 51.649213, lng: -3.033712 },
-  { id: 'fairwater', town: 'cwmbran', group: 'cwmbran-w', name: 'Fairwater', note: 'West Cwmbran neighbourhood.', lat: 51.6450277, lng: -3.0469894 },
+  { id: 'fairwater', town: 'cwmbran', group: 'cwmbran-w', name: 'Fairwater', note: 'West Cwmbran neighbourhood.', lat: 51.643823, lng: -3.045957 },
 
   // CWMBRAN SW
-  { id: 'henllys', town: 'cwmbran', group: 'cwmbran-sw', name: 'Henllys', note: 'Western edge — own community council.', lat: 51.6377837, lng: -3.0593491 },
-  { id: 'ty-canol', town: 'cwmbran', group: 'cwmbran-sw', name: 'Ty Canol', note: 'West Cwmbran near Henllys.', lat: 51.6449745, lng: -3.057375 },
-  { id: 'coed-eva', town: 'cwmbran', group: 'cwmbran-sw', name: 'Coed Eva', note: 'SW Cwmbran (includes Two Locks zone).', lat: 51.6395948, lng: -3.0444145 },
-  { id: 'two-locks', town: 'cwmbran', group: 'cwmbran-sw', name: 'Two Locks', note: 'Named after the canal locks. Adjoins Hollybush.', lat: 51.6423114, lng: -3.0315399 },
-  { id: 'hollybush', town: 'cwmbran', group: 'cwmbran-sw', name: 'Hollybush', note: 'South Cwmbran — adjacent to Two Locks.', lat: 51.6369847, lng: -3.0356598 },
+  { id: 'henllys', town: 'cwmbran', group: 'cwmbran-sw', name: 'Henllys', note: 'Western edge — own community council.', lat: 51.637555, lng: -3.061117 },
+  { id: 'ty-canol', town: 'cwmbran', group: 'cwmbran-sw', name: 'Ty Canol', note: 'West Cwmbran near Henllys.', lat: 51.641818, lng: -3.055279 },
+  { id: 'coed-eva', town: 'cwmbran', group: 'cwmbran-sw', name: 'Coed Eva', note: 'SW Cwmbran (includes Two Locks zone).', lat: 51.640459, lng: -3.045618 },
+  { id: 'two-locks', town: 'cwmbran', group: 'cwmbran-sw', name: 'Two Locks', note: 'Named after the canal locks. Adjoins Hollybush.', lat: 51.64153, lng: -3.029206 },
+  { id: 'hollybush', town: 'cwmbran', group: 'cwmbran-sw', name: 'Hollybush', note: 'South Cwmbran — adjacent to Two Locks.', lat: 51.635339, lng: -3.034109 },
 
   // CWMBRAN LANDMARKS
   { id: 'cwmbran-police', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Police Station', note: 'Gwent Police station, central Cwmbran.', lat: 51.6514219, lng: -3.021782 },
@@ -1119,7 +1135,7 @@ const areas = [
   { id: 'vue-cinema', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Vue Cinema — Drop/Pickup', note: 'Cinema drop-off and pickup point.', lat: 51.654314, lng: -3.020030 },
   { id: 'lloyds-bank-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Lloyds Bank — Drop/Pickup', note: 'Drop-off and pickup point.', lat: 51.654761, lng: -3.020394 },
   { id: 'morrisons-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Morrisons — Drop/Pickup', note: 'Supermarket drop-off and pickup.', lat: 51.655124, lng: -3.017230 },
-  { id: 'coleg-gwent', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Coleg Gwent — Drop/Pickup', note: 'College drop-off and pickup point.', lat: 51.6546602, lng: -3.0174261 },
+  { id: 'coleg-gwent', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Coleg Gwent — Drop/Pickup', note: 'College drop-off and pickup point.', lat: 51.654673, lng: -3.017442 },
   { id: 'meritor-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Meritor — Drop/Pickup', note: 'Workplace drop-off and pickup point.', lat: 51.651309, lng: -3.018184 },
   { id: 'parkway-staff', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Parkway Hotel — Staff Entrance', note: 'Staff entrance, southern Cwmbran.', lat: 51.632439388647335, lng: -3.017231894378185 },
   { id: 'parkway-main', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Parkway Hotel — Main Entrance', note: 'Main hotel entrance.', lat: 51.63202984138205, lng: -3.017671782410145 },
@@ -1181,7 +1197,7 @@ const areas = [
   { id: 'club-cwmbran-wmc', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Working Men\'s Band Club', note: 'Workingmen\'s Club on Oldbury Rd, central Cwmbran.', lat: 51.6452009, lng: -3.0193388 },
   { id: 'club-pontnewydd-wmc', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Pontnewydd Workingmen\'s Club', note: 'Workingmen\'s Club on Chapel St, Pontnewydd.', lat: 51.657791, lng: -3.026518 },
   { id: 'club-st-josephs', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'St Joseph\'s Social Club', note: 'Social Club on Blenheim Rd, St Dials.', lat: 51.649234, lng: -3.0385717 },
-  { id: 'club-cwmbran-celtic', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Celtic Sports & Social Club', note: 'Sports & social club on Oak St, near Old Cwmbran.', lat: 51.6472047, lng: -3.0247325 },
+  { id: 'club-cwmbran-celtic', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Celtic Sports & Social Club', note: 'Sports & social club on Oak St, near Old Cwmbran.', lat: 51.6470836, lng: -3.0247382 },
   { id: 'club-croesyceiliog-cricket', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Croesyceiliog Cricket & Rugby Club', note: 'Sports & social club on The Highway, Croesyceiliog.', lat: 51.6618706, lng: -3.0044683 },
   { id: 'club-croesyceiliog-bowls', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Croesyceiliog Bowls Club', note: 'Bowls club on Woodland Rd, Croesyceiliog.', lat: 51.6577017, lng: -3.0123204 },
 
@@ -1197,16 +1213,16 @@ const areas = [
   { id: 'club-elgam-wmc', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Elgam & District Working Men\'s Club', note: 'Workingmen\'s club on Rifle St, Blaenavon.', lat: 51.7789702, lng: -3.0843922 },
 
   // NEW AREAS FROM POLYGON DRAWING
-  { id: 'ty-coch', town: 'cwmbran', group: 'cwmbran-extra', name: 'Ty Coch', note: 'Cwmbran area.', lat: 51.6384762, lng: -3.0241585 },
-  { id: 'southville', town: 'cwmbran', group: 'cwmbran-extra', name: 'Southville', note: 'Cwmbran area.', lat: 51.6499541, lng: -3.0205107 },
-  { id: 'northville', town: 'cwmbran', group: 'cwmbran-extra', name: 'Northville', note: 'Cwmbran area.', lat: 51.6580747, lng: -3.022356 },
-  { id: 'springvale', town: 'cwmbran', group: 'cwmbran-extra', name: 'Springvale', note: 'Cwmbran area.', lat: 51.6560514, lng: -3.0377197 },
+  { id: 'ty-coch', town: 'cwmbran', group: 'cwmbran-extra', name: 'Ty Coch', note: 'Cwmbran area.', lat: 51.638384, lng: -3.022992 },
+  { id: 'southville', town: 'cwmbran', group: 'cwmbran-extra', name: 'Southville', note: 'Cwmbran area.', lat: 51.64947, lng: -3.019954 },
+  { id: 'northville', town: 'cwmbran', group: 'cwmbran-extra', name: 'Northville', note: 'Cwmbran area.', lat: 51.657739, lng: -3.021726 },
+  { id: 'springvale', town: 'cwmbran', group: 'cwmbran-extra', name: 'Springvale', note: 'Cwmbran area.', lat: 51.656454, lng: -3.039814 },
 
   // ADDITIONAL POLYGON-DRAWN AREAS
-  { id: 'pentrepiod', town: 'pontypool', group: 'pontypool-extra', name: 'Pentrepiod', note: 'Small Pontypool area, near Snatchwood.', lat: 51.712512, lng: -3.0623531 },
-  { id: 'old-furnace', town: 'pontypool', group: 'pontypool-extra', name: 'Old Furnace', note: 'Small area south-west of Tranch.', lat: 51.6991083, lng: -3.068018 },
-  { id: 'lower-race', town: 'pontypool', group: 'pontypool-extra', name: 'Lower Race', note: 'South of Pontypool, near Cwmynyscoy.', lat: 51.69581, lng: -3.045187 },
-  { id: 'llanfrechfa', town: 'cwmbran', group: 'cwmbran-extra', name: 'Llanfrechfa', note: 'Village south-east of Cwmbran — home of The Grange University Hospital.', lat: 51.6429505, lng: -2.9939461 },
+  { id: 'pentrepiod', town: 'pontypool', group: 'pontypool-extra', name: 'Pentrepiod', note: 'Small Pontypool area, near Snatchwood.', lat: 51.713034, lng: -3.062588 },
+  { id: 'old-furnace', town: 'pontypool', group: 'pontypool-extra', name: 'Old Furnace', note: 'Small area south-west of Tranch.', lat: 51.703215, lng: -3.066225 },
+  { id: 'lower-race', town: 'pontypool', group: 'pontypool-extra', name: 'Lower Race', note: 'South of Pontypool, near Cwmynyscoy.', lat: 51.69723, lng: -3.047654 },
+  { id: 'llanfrechfa', town: 'cwmbran', group: 'cwmbran-extra', name: 'Llanfrechfa', note: 'Village south-east of Cwmbran — home of The Grange University Hospital.', lat: 51.645362, lng: -2.987233 },
 ];
 
 const areaBoundaries = {
@@ -1289,6 +1305,16 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors',
   maxZoom: 18,
 }).addTo(map);
+
+// Recalculate map size once the layout has settled and on window resize.
+// This is important because the map height is now relative to viewport (75vh),
+// so its actual pixel size depends on the resolved window dimensions.
+setTimeout(() => map.invalidateSize(), 200);
+window.addEventListener('resize', () => {
+  // Throttle resize handling
+  clearTimeout(window._mapResizeTimer);
+  window._mapResizeTimer = setTimeout(() => map.invalidateSize(), 150);
+});
 
 const markers = {};
 
