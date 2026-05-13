@@ -1726,6 +1726,30 @@ function getAreaCategory(area) {
   return 'other';
 }
 
+// Standard ray-casting point-in-polygon check. Returns true if the point falls inside the polygon.
+function pointInPolygon(lat, lng, polygon) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [yi, xi] = polygon[i];
+    const [yj, xj] = polygon[j];
+    const intersect = ((yi > lat) !== (yj > lat)) &&
+      (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+// For a non-area landmark pin, find which residential area's polygon contains it.
+// Returns the area id (e.g. 'penygarn'), or null if no polygon contains the point.
+function findContainingAreaId(lat, lng) {
+  for (const id in areaBoundaries) {
+    if (pointInPolygon(lat, lng, areaBoundaries[id])) {
+      return id;
+    }
+  }
+  return null;
+}
+
 // Category metadata — defines display order, label, and icon
 const categoryConfig = [
   { id: 'areas',         label: 'Areas & Villages',   icon: '◉' },
@@ -1832,30 +1856,53 @@ function activateArea(id, openPopup = true, scrollToMap = false) {
   if (marker && !map.hasLayer(marker)) {
     marker.addTo(map);
   }
-  // Polygon handling for residential areas:
-  //   If boundaries toggle is ON  → make sure this area's polygon is visible (force past filters)
-  //   If boundaries toggle is OFF → draw a single "solo" polygon for this area only,
-  //                                  replacing any previously-drawn solo one
+
+  // Polygon handling:
+  //   Boundaries toggle ON  → force-show this area's polygon (if it IS an area).
+  //                           For landmarks, do nothing extra — the full boundary system already shows everything.
+  //   Boundaries toggle OFF → draw a single "solo" polygon to highlight context:
+  //                           - If it's an area → its own polygon
+  //                           - If it's a landmark → the polygon of whichever area CONTAINS the landmark
   const isResidentialArea = areaBoundaries.hasOwnProperty(id);
-  if (isResidentialArea) {
-    if (boundariesVisible && polygonLayers[id]) {
+
+  if (boundariesVisible) {
+    // Boundaries already drawn — just ensure this one (if area) is visible past filters
+    if (isResidentialArea && polygonLayers[id]) {
       const poly = polygonLayers[id];
       if (!map.hasLayer(poly)) poly.addTo(map);
       const label = boundaryLabels[id];
       if (label && !map.hasLayer(label)) label.addTo(map);
-    } else if (!boundariesVisible) {
-      // Remove any previous solo polygon
-      if (soloHighlightPolygon) {
-        map.removeLayer(soloHighlightPolygon);
-        soloHighlightPolygon = null;
+    }
+    // For landmarks while boundaries are on, also force-show the containing area's polygon
+    if (!isResidentialArea) {
+      const containingId = findContainingAreaId(area.lat, area.lng);
+      if (containingId && polygonLayers[containingId]) {
+        const poly = polygonLayers[containingId];
+        if (!map.hasLayer(poly)) poly.addTo(map);
+        const label = boundaryLabels[containingId];
+        if (label && !map.hasLayer(label)) label.addTo(map);
       }
-      if (soloHighlightLabel) {
-        map.removeLayer(soloHighlightLabel);
-        soloHighlightLabel = null;
-      }
-      // Draw the new one
-      const coords = areaBoundaries[id];
-      const color = getBoundaryColor(id);
+    }
+  } else {
+    // Boundaries off → solo highlight system
+    // Figure out which area to highlight (own area if it IS an area, else containing area)
+    const highlightId = isResidentialArea ? id : findContainingAreaId(area.lat, area.lng);
+
+    // Clear any previous solo polygon
+    if (soloHighlightPolygon) {
+      map.removeLayer(soloHighlightPolygon);
+      soloHighlightPolygon = null;
+    }
+    if (soloHighlightLabel) {
+      map.removeLayer(soloHighlightLabel);
+      soloHighlightLabel = null;
+    }
+
+    // Draw the new one if we have something to highlight
+    if (highlightId && areaBoundaries[highlightId]) {
+      const highlightArea = areas.find(a => a.id === highlightId);
+      const coords = areaBoundaries[highlightId];
+      const color = getBoundaryColor(highlightId);
       soloHighlightPolygon = L.polygon(coords, {
         color: color,
         weight: 3.5,
@@ -1866,28 +1913,20 @@ function activateArea(id, openPopup = true, scrollToMap = false) {
         lineJoin: 'round',
         lineCap: 'round'
       }).addTo(map);
-      // Label for the solo polygon
-      const labelIcon = L.divIcon({
-        className: 'boundary-label-wrapper',
-        html: `<div class="boundary-label" data-town="${area.town}">${area.name}</div>`,
-        iconSize: null,
-        iconAnchor: [0, 0]
-      });
-      soloHighlightLabel = L.marker([area.lat, area.lng], {
-        icon: labelIcon,
-        interactive: false,
-        keyboard: false
-      }).addTo(map);
-    }
-  } else {
-    // Not an area pin — clear any solo polygon if one was up
-    if (soloHighlightPolygon) {
-      map.removeLayer(soloHighlightPolygon);
-      soloHighlightPolygon = null;
-    }
-    if (soloHighlightLabel) {
-      map.removeLayer(soloHighlightLabel);
-      soloHighlightLabel = null;
+      // Label for the solo polygon, placed at the area's pin position
+      if (highlightArea) {
+        const labelIcon = L.divIcon({
+          className: 'boundary-label-wrapper',
+          html: `<div class="boundary-label" data-town="${highlightArea.town}">${highlightArea.name}</div>`,
+          iconSize: null,
+          iconAnchor: [0, 0]
+        });
+        soloHighlightLabel = L.marker([highlightArea.lat, highlightArea.lng], {
+          icon: labelIcon,
+          interactive: false,
+          keyboard: false
+        }).addTo(map);
+      }
     }
   }
 
