@@ -1430,16 +1430,16 @@ function renderAreas() {
     container.innerHTML = html;
   });
 
-  // Wire up click handlers
+  // Wire up click handlers — list clicks scroll the page back to the map so user sees the result
   document.querySelectorAll('.area-item').forEach(item => {
-    item.addEventListener('click', () => activateArea(item.dataset.id));
+    item.addEventListener('click', () => activateArea(item.dataset.id, true, true));
   });
 }
 
 // ============ ACTIVATE ============
 let activeId = null;
 
-function activateArea(id, openPopup = true) {
+function activateArea(id, openPopup = true, scrollToMap = false) {
   // Deactivate previous
   document.querySelectorAll('.area-item.active').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.custom-marker.active').forEach(el => el.classList.remove('active'));
@@ -1456,16 +1456,27 @@ function activateArea(id, openPopup = true) {
   const area = areas.find(a => a.id === id);
   if (!area) return;
 
-  // Highlight list item
+  // Highlight list item — only scroll the list when we're NOT also scrolling to the map
+  // (otherwise the two scrolls fight each other)
   const item = document.querySelector(`.area-item[data-id="${id}"]`);
   if (item) {
     item.classList.add('active');
-    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (!scrollToMap) {
+      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   }
 
   // Highlight marker
   const markerEl = document.querySelector(`.custom-marker[data-id="${id}"]`);
   if (markerEl) markerEl.classList.add('active');
+
+  // Scroll the map into view if requested (e.g. when clicked from the area list below)
+  if (scrollToMap) {
+    const mapSection = document.querySelector('.map-section');
+    if (mapSection) {
+      mapSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
 
   // Pan map. Only open popup if explicitly requested (default true for clicks from list/pin)
   const currentZoom = map.getZoom();
