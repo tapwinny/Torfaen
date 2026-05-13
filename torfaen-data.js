@@ -307,6 +307,25 @@ const areas = [
   { id: 'entertainment-cheeky-monkeys', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cheeky Monkeys', note: 'Childrens play centre/nursery in Cwmbran.', lat: 51.643258, lng: -3.048577 },
   { id: 'school-building-blocks', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Building Blocks Nursery', note: 'Childrens nursery in Cwmbran.', lat: 51.642913, lng: -3.048711 },
   { id: 'civic-panteg-house', town: 'pontypool', group: 'pontypool-landmarks', name: 'Panteg House — Entrance', note: 'Council/community facility, Panteg, Pontypool.', lat: 51.68332, lng: -3.027588 },
+
+  // Batch — Aldi/KFC/Coop/takeaways/pubs/car washes/church/cemetery/Veezu
+  { id: 'shop-aldi-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Aldi — Pontypool', note: 'Aldi supermarket at Pontymoile, Pontypool.', lat: 51.693191, lng: -3.023349 },
+  { id: 'food-kfc-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'KFC — Pontypool', note: 'KFC fast food, Pontypool.', lat: 51.692297, lng: -3.021385 },
+  { id: 'food-waterloo-kebab', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Waterloo Kebab', note: 'Kebab takeaway, Cwmbran.', lat: 51.6419, lng: -3.025445 },
+  { id: 'food-jade-garden', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Jade Garden', note: 'Chinese takeaway/restaurant, Cwmbran.', lat: 51.642123, lng: -3.023274 },
+  { id: 'food-family-kebab-van', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Family Kebab Van', note: 'Kebab van, Cwmbran.', lat: 51.647959, lng: -3.017362 },
+  { id: 'food-aldi-kebab-van', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Aldi Kebab Van', note: 'Kebab van near Aldi, Cwmbran.', lat: 51.655993, lng: -3.027182 },
+  { id: 'food-yummies-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Yummies Cwmbran', note: 'Takeaway/cafe, Cwmbran.', lat: 51.655513, lng: -3.032192 },
+  { id: 'shop-coop-griffithstown', town: 'pontypool', group: 'pontypool-landmarks', name: 'Co-op — Griffithstown', note: 'Co-op convenience store in Griffithstown, Pontypool.', lat: 51.686074, lng: -3.025463 },
+  { id: 'pub-skippys-bar', town: 'pontypool', group: 'pontypool-landmarks', name: 'Skippy\'s Bar', note: 'Bar in Griffithstown, Pontypool.', lat: 51.686003, lng: -3.026255 },
+  { id: 'pub-waterloo', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Waterloo Pub', note: 'Pub in Cwmbran.', lat: 51.641872, lng: -3.025681 },
+  { id: 'shop-llantarnam-car-wash-1', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llantarnam Car Wash', note: 'Car wash, Llantarnam area, Cwmbran.', lat: 51.654061, lng: -3.029589 },
+  { id: 'shop-llantarnam-car-wash-2', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llantarnam Car Wash (2)', note: 'Second car wash location, Llantarnam area, Cwmbran.', lat: 51.644413, lng: -3.016025 },
+  { id: 'shop-dragon-car-wash', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Dragon Car Wash', note: 'Car wash near Ponthir, Cwmbran.', lat: 51.62407, lng: -3.009112 },
+  { id: 'civic-victory-church', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Victory Church', note: 'Place of worship, Llantarnam area, Cwmbran.', lat: 51.653907, lng: -3.029697 },
+  { id: 'park-boating-lake', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Boating Lake Car Park', note: 'Boating lake at Llanyrafon, Cwmbran.', lat: 51.640557, lng: -3.004871 },
+  { id: 'cemetery-cwmbran-oakfield', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Cemetery — Oakfield', note: 'Cemetery in Oakfield, Cwmbran.', lat: 51.641454, lng: -3.017867 },
+  { id: 'civic-veezu-hq', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Veezu HQ — Springvale', note: 'Veezu (taxi company) headquarters, Springvale Industrial Estate, Cwmbran.', lat: 51.655746, lng: -3.032156 },
 ];
 
 const areaBoundaries = {
