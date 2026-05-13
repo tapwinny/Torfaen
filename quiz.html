@@ -793,7 +793,7 @@ button.btn.ghost {
 
     <!-- DROP-OFF MODE: drive a route, drop the passenger -->
     <div id="q-dropoff-mode" style="display: none;">
-      <div class="map-hint" id="dropoff-hint">Pick-up shown in <strong style="color: var(--gold);">pink</strong>. <strong>Left-click + drag</strong> to draw (desktop) or <strong>one-finger drag</strong> (mobile). To pan the map: <strong>right-click + drag</strong> or <strong>two-finger drag</strong>. Aim within 50m of the destination.</div>
+      <div class="map-hint" id="dropoff-hint">Pick-up in <strong style="color: var(--gold);">pink</strong>. <strong>Left-click</strong> drags to draw. <strong>Right-click</strong> or <strong>hold Space</strong> drags to pan. On mobile: <strong>1 finger draws, 2 fingers pan</strong>. Aim within 50m.</div>
       <div id="dropoff-map"></div>
       <div class="dropoff-controls">
         <button class="btn ghost" id="btn-clear-route" type="button">⟲ Clear route</button>
@@ -1226,13 +1226,44 @@ function initDropoffMap() {
     updateDropoffStatus();
   }
 
-  // ============ MOUSE: left-click draws, right-click pans ============
-  // Leaflet's native drag stays enabled so right-button drag pans normally.
-  // We intercept left-button mousedown to start drawing instead.
+  // ============ MOUSE: left-click draws, right-click OR spacebar+left pans ============
+  // Leaflet's built-in dragging only responds to left-click, so we implement
+  // right-click panning manually.
   let leftMouseDown = false;
+  let rightMouseDown = false;
+  let spacebarHeld = false;
+  let panLastX = 0;
+  let panLastY = 0;
+
+  // Track spacebar
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space' && !spacebarHeld) {
+      spacebarHeld = true;
+      mapDiv.style.cursor = 'grab';
+    }
+  });
+  window.addEventListener('keyup', e => {
+    if (e.code === 'Space') {
+      spacebarHeld = false;
+      mapDiv.style.cursor = '';
+    }
+  });
+
   mapDiv.addEventListener('mousedown', e => {
     if (answered) return;
+
+    // Right-click OR spacebar + left-click → pan mode
+    if (e.button === 2 || (e.button === 0 && spacebarHeld)) {
+      rightMouseDown = true;
+      panLastX = e.clientX;
+      panLastY = e.clientY;
+      mapDiv.style.cursor = 'grabbing';
+      e.preventDefault();
+      return;
+    }
+
     if (e.button === 0) {
+      // Left button only → draw
       leftMouseDown = true;
       dropoffMap.dragging.disable();
       const rect = mapDiv.getBoundingClientRect();
@@ -1241,23 +1272,39 @@ function initDropoffMap() {
       startDraw(latlng);
       e.preventDefault();
     }
-    // Right/middle button: let Leaflet handle it — map pans normally
   });
+
   mapDiv.addEventListener('mousemove', e => {
-    if (!leftMouseDown || !dropoffIsDrawing) return;
-    const rect = mapDiv.getBoundingClientRect();
-    const layerPoint = L.point(e.clientX - rect.left, e.clientY - rect.top);
-    const latlng = dropoffMap.containerPointToLatLng(layerPoint);
-    continueDraw(latlng);
+    if (rightMouseDown) {
+      // Manual pan: shift the map by the cursor delta
+      const dx = e.clientX - panLastX;
+      const dy = e.clientY - panLastY;
+      panLastX = e.clientX;
+      panLastY = e.clientY;
+      dropoffMap.panBy([-dx, -dy], { animate: false });
+      return;
+    }
+    if (leftMouseDown && dropoffIsDrawing) {
+      const rect = mapDiv.getBoundingClientRect();
+      const layerPoint = L.point(e.clientX - rect.left, e.clientY - rect.top);
+      const latlng = dropoffMap.containerPointToLatLng(layerPoint);
+      continueDraw(latlng);
+    }
   });
-  window.addEventListener('mouseup', () => {
+
+  window.addEventListener('mouseup', e => {
+    if (rightMouseDown) {
+      rightMouseDown = false;
+      mapDiv.style.cursor = spacebarHeld ? 'grab' : '';
+    }
     if (leftMouseDown) {
       leftMouseDown = false;
       endDraw();
       dropoffMap.dragging.enable();
     }
   });
-  // Suppress the right-click context menu over the map so right-drag panning works smoothly
+
+  // Suppress right-click context menu so right-drag panning works smoothly
   mapDiv.addEventListener('contextmenu', e => e.preventDefault());
 
   // ============ TOUCH: one finger draws, two fingers pan/zoom ============
