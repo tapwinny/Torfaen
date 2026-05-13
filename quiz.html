@@ -280,6 +280,21 @@ h2 {
   gap: 12px;
   align-items: center;
   margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+/* Sticky variant — used on the quiz screen so the Next/Confirm button is
+   always reachable without scrolling, regardless of map height. */
+.action-bar-sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 90;
+  background: linear-gradient(to top, var(--paper) 0%, var(--paper) 70%, rgba(15, 10, 23, 0.85) 100%);
+  padding: 14px 0 16px;
+  margin-top: 16px;
+  margin-bottom: -16px;  /* pull container's bottom padding up so we sit flush */
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(8px);
 }
 
 button.btn {
@@ -823,7 +838,7 @@ button.btn.ghost {
       <div id="q-feedback-text"></div>
     </div>
 
-    <div class="action-bar">
+    <div class="action-bar action-bar-sticky">
       <button class="btn primary" id="btn-confirm-guess" disabled style="display: none;">Confirm placement ✓</button>
       <button class="btn primary" id="btn-confirm-dropoff" disabled style="display: none;">Confirm drop-off ✓</button>
       <button class="btn primary" id="btn-next" style="display: none;">Next question →</button>
@@ -1534,8 +1549,7 @@ function showDropoffFeedback(target, dist) {
     });
   }
   updateScoreUI();
-  document.getElementById('btn-next').style.display = 'inline-block';
-  document.getElementById('btn-skip').style.display = 'none';
+  showNextButton();
 }
 
 document.getElementById('btn-confirm-dropoff').addEventListener('click', () => {
@@ -1657,8 +1671,7 @@ function showFeedback(correct, target, dist, guessedAreaId) {
     });
   }
   updateScoreUI();
-  document.getElementById('btn-next').style.display = 'inline-block';
-  document.getElementById('btn-skip').style.display = 'none';
+  showNextButton();
 }
 
 function showLandmarkFeedback(correct, target, chosenAreaId, correctAreaId) {
@@ -1688,13 +1701,23 @@ function showLandmarkFeedback(correct, target, chosenAreaId, correctAreaId) {
     });
   }
   updateScoreUI();
-  document.getElementById('btn-next').style.display = 'inline-block';
-  document.getElementById('btn-skip').style.display = 'none';
+  showNextButton();
 }
 
 function updateScoreUI() {
   document.getElementById('q-right').textContent = correctCount;
   document.getElementById('q-wrong').textContent = wrongCount;
+}
+
+// After answering, reveal the Next button + ensure it's visible (the sticky bar
+// usually keeps it on screen, but we still scroll the feedback into view so the
+// user reads the result before continuing).
+function showNextButton() {
+  document.getElementById('btn-next').style.display = 'inline-block';
+  document.getElementById('btn-skip').style.display = 'none';
+  // Scroll the feedback area into view so the user sees the result
+  const fb = document.getElementById('q-feedback');
+  if (fb) fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // =============== RENDER A QUESTION ===============
