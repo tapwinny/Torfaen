@@ -265,6 +265,12 @@ body {
   opacity: 0;
 }
 
+/* Suppressed when the floating "Area" banner is already showing this area's name —
+   no need to display the polygon label too. */
+.label-suppressed-by-banner .boundary-label {
+  opacity: 0;
+}
+
 /* ====== EDIT MODE PANEL ====== */
 .edit-panel {
   background: var(--paper-light);
@@ -1812,9 +1818,17 @@ function findContainingAreaId(lat, lng) {
 
 // Update the floating "you are in X" banner above the map.
 // Pass null/undefined to hide it.
+// Also hides the polygon label for the active area (when boundaries are on),
+// since the banner already shows the same name.
 function updateAreaBanner(areaId) {
   const banner = document.getElementById('area-banner');
   if (!banner) return;
+
+  // First: un-hide any previously-hidden polygon labels
+  // (so that as the user switches between areas, the previous one's label comes back)
+  document.querySelectorAll('.boundary-label-wrapper.label-suppressed-by-banner')
+    .forEach(el => el.classList.remove('label-suppressed-by-banner'));
+
   if (!areaId) {
     banner.classList.remove('visible');
     return;
@@ -1827,6 +1841,13 @@ function updateAreaBanner(areaId) {
   banner.innerHTML = `<span class="area-banner-label">Area</span>${area.name}`;
   banner.setAttribute('data-town', area.town);
   banner.classList.add('visible');
+
+  // Suppress this area's polygon label (if boundaries are on, that's the only one shown).
+  // The banner up top is now the visible source of truth for the name.
+  if (boundariesVisible && boundaryLabels[areaId]) {
+    const labelEl = boundaryLabels[areaId].getElement();
+    if (labelEl) labelEl.classList.add('label-suppressed-by-banner');
+  }
 }
 
 // Category metadata — defines display order, label, and icon
@@ -1994,20 +2015,8 @@ function activateArea(id, openPopup = true, scrollToMap = false) {
         lineJoin: 'round',
         lineCap: 'round'
       }).addTo(map);
-      // Label for the solo polygon, placed at the area's pin position
-      if (highlightArea) {
-        const labelIcon = L.divIcon({
-          className: 'boundary-label-wrapper',
-          html: `<div class="boundary-label" data-town="${highlightArea.town}">${highlightArea.name}</div>`,
-          iconSize: null,
-          iconAnchor: [0, 0]
-        });
-        soloHighlightLabel = L.marker([highlightArea.lat, highlightArea.lng], {
-          icon: labelIcon,
-          interactive: false,
-          keyboard: false
-        }).addTo(map);
-      }
+      // No label for solo polygon — the floating "Area" banner at the top of the map
+      // already shows the name, so we'd just be duplicating the info.
     }
   }
 
