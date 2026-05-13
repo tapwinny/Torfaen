@@ -761,6 +761,17 @@ button.btn.ghost {
       <div class="chip-row" id="setup-cats"></div>
     </div>
 
+    <div class="filter-block" id="setup-scope-block" style="display: none;">
+      <h3>Destination scope</h3>
+      <div class="chip-row" id="setup-scope">
+        <button class="chip active" data-scope="taxi" type="button">Taxi-test landmarks (recommended)</button>
+        <button class="chip" data-scope="all" type="button">All landmarks</button>
+      </div>
+      <p style="margin-top: 10px; font-size: 13px; color: var(--ink-soft); line-height: 1.5;">
+        <strong style="color: var(--gold);">Taxi-test landmarks</strong> excludes schools — focusing on places passengers actually take taxis to (hospitals, shops, stations, pubs, industrial estates etc).
+      </p>
+    </div>
+
     <div class="action-bar">
       <button class="btn primary" id="btn-start-quiz">Start quiz →</button>
       <button class="btn ghost" id="btn-back-to-modes">← Back</button>
@@ -857,15 +868,19 @@ button.btn.ghost {
 const QUESTIONS_PER_QUIZ = 20;
 
 // State
-let currentMode = null;          // 'areas' or 'landmarks'
+let currentMode = null;          // 'areas', 'landmarks', or 'dropoff'
 let activeTowns = new Set(['blaenavon', 'pontypool', 'cwmbran']);
 let activeCategories = new Set();  // for landmarks mode
+let dropoffScope = 'taxi';         // 'taxi' (recommended) or 'all' — for dropoff mode
 let questionPool = [];             // questions for the current session
 let qIndex = 0;
 let correctCount = 0;
 let wrongCount = 0;
 let wrongAnswers = [];             // for review screen
 let answered = false;              // is the current question answered?
+
+// Categories excluded from taxi-test scope (places passengers rarely take taxis to)
+const taxiTestExclude = new Set(['education']);
 
 // Map (for areas mode)
 let quizMap = null;
@@ -997,16 +1012,19 @@ function setupForMode() {
   const title = document.getElementById('setup-title');
   const subtitle = document.getElementById('setup-subtitle');
   const catBlock = document.getElementById('setup-cat-block');
+  const scopeBlock = document.getElementById('setup-scope-block');
+
+  // Default both to hidden, then show whichever applies
+  catBlock.style.display = 'none';
+  scopeBlock.style.display = 'none';
 
   if (currentMode === 'areas') {
     title.textContent = 'Set up Areas quiz';
     subtitle.textContent = 'You\'ll be shown an area name and have to tap its location on the map.';
-    catBlock.style.display = 'none';
   } else if (currentMode === 'dropoff') {
     title.textContent = 'Set up Drop-off quiz';
     subtitle.textContent = 'You\'ll be given a pick-up and a destination. Drive there by drawing your route, and drop the passenger within 50m of the actual spot.';
-    catBlock.style.display = 'block';
-    renderCategoryChips();
+    scopeBlock.style.display = 'block';
   } else {
     title.textContent = 'Set up Landmarks quiz';
     subtitle.textContent = 'You\'ll be shown a landmark and pick the area it sits in.';
@@ -1030,6 +1048,18 @@ document.querySelectorAll('#setup-towns .chip').forEach(chip => {
       activeTowns.add(t);
     }
     chip.classList.toggle('active', activeTowns.has(t));
+    updateAvailableCount();
+  });
+});
+
+// Scope chips (for drop-off mode: taxi-test vs all landmarks)
+document.querySelectorAll('#setup-scope .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    dropoffScope = chip.dataset.scope;
+    // Only one scope active at a time — radio-style
+    document.querySelectorAll('#setup-scope .chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.scope === dropoffScope);
+    });
     updateAvailableCount();
   });
 });
@@ -1073,11 +1103,11 @@ function getQuestionableItems() {
       // Areas mode: only residential areas with a boundary polygon
       return areaBoundaries.hasOwnProperty(a.id);
     } else if (currentMode === 'dropoff') {
-      // Drop-off mode: any landmark (not residential areas — they're too broad to "arrive" at within 50m)
+      // Drop-off mode: landmarks only, filtered by scope (taxi-test vs all)
       const cat = getAreaCategory(a);
       if (cat === 'areas') return false;
-      // No category filter for dropoff — all landmarks are fair game (set if active, else all)
-      if (activeCategories.size > 0 && !activeCategories.has(cat)) return false;
+      // In "taxi" scope, exclude categories that aren't typical taxi destinations (schools, industrial)
+      if (dropoffScope === 'taxi' && taxiTestExclude.has(cat)) return false;
       return true;
     } else {
       // Landmarks mode: landmark pins with an active category
