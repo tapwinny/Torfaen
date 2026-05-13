@@ -1097,6 +1097,18 @@ function updateAvailableCount() {
 }
 
 // =============== QUIZ START ===============
+// Towns that are geographically adjacent. Blaenavon and Cwmbran skip a town
+// (Pontypool in the middle) so they're NOT considered adjacent — pairing them
+// would be an unrealistic 8+ mile fare.
+const adjacentTowns = {
+  blaenavon: ['blaenavon', 'pontypool'],
+  pontypool: ['pontypool', 'blaenavon', 'cwmbran'],
+  cwmbran:   ['cwmbran',   'pontypool'],
+};
+function townsAreCompatible(t1, t2) {
+  return adjacentTowns[t1] && adjacentTowns[t1].includes(t2);
+}
+
 document.getElementById('btn-start-quiz').addEventListener('click', () => {
   let pool = getQuestionableItems();
   if (pool.length < 4) return;
@@ -1104,11 +1116,16 @@ document.getElementById('btn-start-quiz').addEventListener('click', () => {
 
   if (currentMode === 'dropoff') {
     // Drop-off mode: each question is a (start, destination) pair.
-    // Pair each destination with a random different landmark as start.
+    // Pair each destination with a random start, but only from a "compatible" town
+    // (same town or adjacent town) so we don't get unrealistic Henllys → Blaenavon trips.
     questionPool = shuffled.slice(0, Math.min(QUESTIONS_PER_QUIZ, shuffled.length)).map(dest => {
-      // Pick a start that's different from the destination and in the filtered pool
-      const candidates = shuffled.filter(c => c.id !== dest.id);
-      const start = candidates[Math.floor(Math.random() * candidates.length)];
+      // Filter candidates to those in the same or adjacent town
+      const candidates = shuffled.filter(c =>
+        c.id !== dest.id && townsAreCompatible(c.town, dest.town)
+      );
+      // Fallback: if nothing matches (e.g. user picked only one town with one item), use any
+      const list = candidates.length > 0 ? candidates : shuffled.filter(c => c.id !== dest.id);
+      const start = list[Math.floor(Math.random() * list.length)];
       return { ...dest, _start: start };
     });
   } else {
