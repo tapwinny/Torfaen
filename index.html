@@ -1419,6 +1419,68 @@ const areas = [
   { id: 'pub-old-bridgend-inn', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Old Bridgend Inn', note: 'Pub in Pontnewydd, Cwmbran.', lat: 51.66101, lng: -3.027513 },
   { id: 'gp-clark-avenue', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Clark Avenue Surgery', note: 'GP surgery on Clark Avenue, Pontnewydd, Cwmbran.', lat: 51.663844, lng: -3.026478 },
   { id: 'gp-llanyravon', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llanyravon Surgery', note: 'GP surgery in Llanyravon, Cwmbran.', lat: 51.648231, lng: -3.006891 },
+
+  // Batch — GPs, care homes, emergency services, civic, attractions
+  { id: 'gp-fairwater', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Fairwater Medical Centre', note: 'GP surgery in Fairwater, Cwmbran.', lat: 51.6446, lng: -3.04814 },
+  { id: 'gp-oak-street', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Oak Street Surgery', note: 'GP surgery, Old Cwmbran (next to Celtic Club).', lat: 51.647301, lng: -3.024921 },
+  { id: 'gp-new-chapel-street', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'New Chapel Street Surgery', note: 'GP surgery, Harold Street, Pontnewydd.', lat: 51.660384, lng: -3.025203 },
+  { id: 'gp-greenmeadow', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Greenmeadow Surgery', note: 'GP surgery in Greenmeadow, Cwmbran.', lat: 51.651791, lng: -3.040402 },
+  { id: 'gp-panteg-health', town: 'pontypool', group: 'pontypool-landmarks', name: 'Panteg Health Centre', note: 'Health centre in Griffithstown, Pontypool.', lat: 51.684321, lng: -3.023903 },
+  { id: 'gp-new-inn-medical', town: 'pontypool', group: 'pontypool-landmarks', name: 'New Inn Medical Centre', note: 'GP surgery in New Inn, Pontypool.', lat: 51.691552, lng: -3.006912 },
+  { id: 'gp-trosnant-lodge', town: 'pontypool', group: 'pontypool-landmarks', name: 'Trosnant Lodge Medical Practice', note: 'GP surgery in Pontypool.', lat: 51.699599, lng: -3.037271 },
+  { id: 'gp-pontypool-medical', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Medical Centre', note: 'GP surgery in Pontypool.', lat: 51.705063, lng: -3.042762 },
+  { id: 'gp-abersychan', town: 'pontypool', group: 'pontypool-landmarks', name: 'Abersychan Group Practice', note: 'GP surgery in Abersychan, Pontypool.', lat: 51.722974, lng: -3.058278 },
+  { id: 'gp-trevethin-health', town: 'pontypool', group: 'pontypool-landmarks', name: 'Trevethin Health Centre', note: 'Health centre on Folly Road, Trevethin, Pontypool.', lat: 51.713675, lng: -3.037503 },
+  { id: 'gp-garndiffaith-health', town: 'pontypool', group: 'pontypool-landmarks', name: 'Garndiffaith Health Centre', note: 'Health centre in Garndiffaith, Pontypool.', lat: 51.735573, lng: -3.066647 },
+  { id: 'gp-blaenavon-medical', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Blaenavon Medical Centre', note: 'Medical centre in Blaenavon.', lat: 51.773559, lng: -3.078424 },
+  { id: 'emergency-pontypool-ambulance', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Ambulance Station', note: 'Welsh Ambulance Service station, Pontypool.', lat: 51.705716, lng: -3.045794 },
+  { id: 'emergency-abersychan-fire', town: 'pontypool', group: 'pontypool-landmarks', name: 'Abersychan Fire Station', note: 'South Wales Fire & Rescue, Abersychan.', lat: 51.721744, lng: -3.057165 },
+  { id: 'emergency-pontypool-police', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Police Station', note: 'Gwent Police station, Pontypool.', lat: 51.701469, lng: -3.040974 },
+  { id: 'care-holly-lodge', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Holly Lodge Residential Care Home', note: 'Residential care home in Coed Eva, Cwmbran.', lat: 51.641286, lng: -3.03509 },
+  { id: 'care-thomas-gabrielle-front', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Thomas Gabrielle Nursing Home — Front', note: 'Nursing home, front entrance, Old Cwmbran.', lat: 51.646009, lng: -3.020445 },
+  { id: 'care-thomas-gabrielle-back', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Thomas Gabrielle Nursing Home — Back', note: 'Nursing home, back entrance, Old Cwmbran.', lat: 51.645739, lng: -3.020816 },
+  { id: 'care-thistle-court', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Thistle Court Care Home', note: 'Care home in Ty Canol, Cwmbran.', lat: 51.644457, lng: -3.058532 },
+  { id: 'care-leadon-court', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Leadon Court Care Home', note: 'Care home in Thornhill, Cwmbran.', lat: 51.657316, lng: -3.050384 },
+  { id: 'care-cwmbran-house', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran House Care Home', note: 'Care home in Pontnewydd, Cwmbran.', lat: 51.667241, lng: -3.030652 },
+  { id: 'care-ty-george-lansbury', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Ty George Lansbury', note: 'Care home in Croesyceiliog, Cwmbran.', lat: 51.66117, lng: -3.002692 },
+  { id: 'care-mayflower', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Mayflower Residential Home', note: 'Residential care home in Llantarnam, Cwmbran.', lat: 51.625931, lng: -3.01001 },
+  { id: 'care-llantarnam-lodge', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llantarnam Lodge Care Home', note: 'Care home in Llantarnam, Cwmbran.', lat: 51.626034, lng: -3.011151 },
+  { id: 'care-panteg-nursing', town: 'pontypool', group: 'pontypool-landmarks', name: 'Panteg Nursing Home', note: 'Nursing home in Griffithstown, Pontypool.', lat: 51.680166, lng: -3.022341 },
+  { id: 'care-rowan-house', town: 'pontypool', group: 'pontypool-landmarks', name: 'Rowan House Nursing Home', note: 'Nursing home in Griffithstown, Pontypool.', lat: 51.686271, lng: -3.024086 },
+  { id: 'care-sunnybank', town: 'pontypool', group: 'pontypool-landmarks', name: 'Sunnybank Residential Care Home', note: 'Residential care home in Griffithstown, Pontypool.', lat: 51.689027, lng: -3.028019 },
+  { id: 'care-regency-house', town: 'pontypool', group: 'pontypool-landmarks', name: 'Regency House Care Home — Main', note: 'Care home in Pontypool, main entrance.', lat: 51.699412, lng: -3.05406 },
+  { id: 'care-regency-house-2', town: 'pontypool', group: 'pontypool-landmarks', name: 'Regency House Care Home — 2nd', note: 'Care home in Pontypool, second entrance.', lat: 51.699282, lng: -3.054567 },
+  { id: 'care-plas-y-garn', town: 'pontypool', group: 'pontypool-landmarks', name: 'Plas y Garn Care Home', note: 'Care home in Penygarn, Pontypool.', lat: 51.704749, lng: -3.039399 },
+  { id: 'care-ty-ceirios', town: 'pontypool', group: 'pontypool-landmarks', name: 'Ty Ceirios Nursing Home', note: 'Nursing home in Pontypool area.', lat: 51.714277, lng: -3.061862 },
+  { id: 'care-ty-bryn', town: 'pontypool', group: 'pontypool-landmarks', name: 'Ty Bryn Nursing Home', note: 'Nursing home in Pontypool area.', lat: 51.725055, lng: -3.060284 },
+  { id: 'shop-one-stop-griffithstown', town: 'pontypool', group: 'pontypool-landmarks', name: 'One Stop — Griffithstown', note: 'Convenience shop in Griffithstown.', lat: 51.685018, lng: -3.022155 },
+  { id: 'shop-premier-pontnewydd', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Premier Grocery Shop', note: 'Convenience shop in Pontnewydd, Cwmbran.', lat: 51.666369, lng: -3.029228 },
+  { id: 'civic-penyparc-complex', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Penyparc Complex', note: 'Community complex in Penyparc, Pontnewydd, Cwmbran.', lat: 51.665004, lng: -3.029539 },
+  { id: 'civic-pontypool-council', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool County Borough Council', note: 'Torfaen County Borough Council, Pontypool.', lat: 51.701509, lng: -3.040149 },
+  { id: 'civic-pontypool-market', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Market', note: 'Indoor market hall, Pontypool.', lat: 51.702077, lng: -3.041431 },
+  { id: 'attraction-big-pit', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Big Pit National Museum', note: 'National Coal Museum, Forgeside, Blaenavon.', lat: 51.773338, lng: -3.105245 },
+  { id: 'attraction-blaenavon-ironworks', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Blaenavon Ironworks', note: 'Historic ironworks site, Blaenavon (Cadw).', lat: 51.776337, lng: -3.08967 },
+
+  // Batch — parks, petrol stations, industrial estates, fire, gym
+  { id: 'park-pontypool-park', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool Park', note: 'Major park in Pontypool with leisure centre.', lat: 51.699789, lng: -3.035444 },
+  { id: 'petrol-asda-express-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Asda Cwmbran Express Petrol', note: 'Asda Express petrol station, Cwmbran.', lat: 51.644656, lng: -3.025273 },
+  { id: 'petrol-morrisons-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Morrisons Petrol Station', note: 'Morrisons forecourt, Cwmbran.', lat: 51.655881, lng: -3.017737 },
+  { id: 'petrol-texaco-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Texaco Petrol Station — Cwmbran', note: 'Texaco petrol station, Cwmbran.', lat: 51.660839, lng: -3.017496 },
+  { id: 'petrol-asda-folly-tower', town: 'pontypool', group: 'pontypool-landmarks', name: 'Asda Express Folly Tower Petrol', note: 'Asda Express petrol station, Folly Tower area.', lat: 51.692791, lng: -3.021022 },
+  { id: 'petrol-esso-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Esso Petrol Station — Pontypool', note: 'Esso petrol station, Pontypool.', lat: 51.698845, lng: -3.042133 },
+  { id: 'petrol-tesco-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Tesco Petrol Station — Pontypool', note: 'Tesco forecourt, Pontypool.', lat: 51.699333, lng: -3.039666 },
+  { id: 'petrol-texaco-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Texaco Petrol Station — Pontypool', note: 'Texaco petrol station, Pontypool.', lat: 51.709574, lng: -3.050172 },
+  { id: 'shop-tesco-pontypool', town: 'pontypool', group: 'pontypool-landmarks', name: 'Tesco Superstore — Pontypool', note: 'Tesco supermarket in Pontypool.', lat: 51.70042, lng: -3.040388 },
+  { id: 'gp-croesyceiliog', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Croesyceiliog Health Centre', note: 'Health centre in Croesyceiliog, Cwmbran.', lat: 51.660797, lng: -3.006342 },
+  { id: 'emergency-blaenavon-fire', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Blaenavon Fire Station', note: 'South Wales Fire & Rescue, Blaenavon.', lat: 51.776883, lng: -3.086409 },
+  { id: 'entertainment-legacy-gym', town: 'pontypool', group: 'pontypool-landmarks', name: 'Legacy Gym Pontypool', note: 'Gym in Pontypool.', lat: 51.709988, lng: -3.050567 },
+  { id: 'industrial-springvale', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Springvale Industrial Estate', note: 'Industrial estate in Springvale, Cwmbran.', lat: 51.655262, lng: -3.031673 },
+  { id: 'industrial-grange', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Grange Industrial Estate', note: 'Industrial estate, Cwmbran.', lat: 51.646608, lng: -3.016059 },
+  { id: 'industrial-court-road', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Court Road Industrial Estate', note: 'Industrial estate, Cwmbran.', lat: 51.643655, lng: -3.012726 },
+  { id: 'industrial-llantarnam', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llantarnam Industrial Estate', note: 'Industrial estate, Llantarnam, Cwmbran.', lat: 51.635009, lng: -3.017659 },
+  { id: 'industrial-forgehammer', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Forgehammer Industrial Estate', note: 'Industrial estate, Cwmbran.', lat: 51.655392, lng: -3.028088 },
+  { id: 'industrial-somerset', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Somerset Industrial Estate', note: 'Industrial estate, Cwmbran.', lat: 51.657856, lng: -3.017471 },
+  { id: 'industrial-polo-grounds', town: 'pontypool', group: 'pontypool-landmarks', name: 'Polo Grounds Industrial Estate', note: 'Industrial estate, Polo Grounds, Pontypool.', lat: 51.690407, lng: -3.014879 },
 ];
 
 const areaBoundaries = {
@@ -1560,18 +1622,24 @@ function getAreaCategory(area) {
   const text = (area.name + ' ' + area.note).toLowerCase();
 
   // Order matters: more specific matches first
-  if (/hospital|a&e|ward|surgery/.test(text)) return 'medical';
-  if (/police|fire station|fire & rescue/.test(text)) return 'emergency';
+  if (/petrol|forecourt|esso|texaco|bp |shell /.test(text)) return 'petrol';
+  if (/hospital|a&e|ward|surgery|medical centre|health centre|gp /.test(text)) return 'medical';
+  if (/care home|nursing home|residential home|residential care/.test(text)) return 'care';
+  if (/police|fire station|fire & rescue|ambulance/.test(text)) return 'emergency';
+  if (/industrial estate|business park/.test(text)) return 'industrial';
+  if (/council|civic|market hall|town hall|library|community complex/.test(text) ||
+      /\bmarket\b/.test(text)) return 'civic';
+  if (/museum|ironworks|big pit|heritage site/.test(text)) return 'attraction';
   if (/\bstation\b|train|rail/.test(text)) return 'stations';
-  if (/aldi|asda|morrisons|primark|tesco|sainsbury|lidl|supermarket/.test(text)) return 'shops';
+  if (/aldi|asda|morrisons|primark|tesco|sainsbury|lidl|supermarket|one stop|spar|premier grocery/.test(text)) return 'shops';
   if (/hotel|premier inn|best western|parkway/.test(text)) return 'hotels';
   if (/mcdonald|harvester|restaurant|kfc|burger king|nando/.test(text)) return 'food';
-  if (/cinema|vue|odeon/.test(text)) return 'entertainment';
+  if (/cinema|vue|odeon|gym/.test(text)) return 'entertainment';
   if (/college|school|coleg/.test(text)) return 'education';
   if (/bank|lloyds|barclays|hsbc|natwest/.test(text)) return 'banks';
   if (/cemetery/.test(text)) return 'other';
-  if (/skatepark|park/.test(text)) return 'parks';
-  if (/\(pub\)|\(bar\)|wetherspoon|open hearth|crow.s nest/.test(text)) return 'pubs';
+  if (/skatepark|farm|park\b/.test(text)) return 'parks';
+  if (/\(pub\)|\(bar\)|wetherspoon|open hearth|crow.s nest|\binn\b|oddfellow|bush inn/.test(text)) return 'pubs';
   if (/\(club\)|workmen|social club|sports & social/.test(text)) return 'clubs';
   if (/pickup|drop|drop\/pickup/.test(text)) return 'pickups';
   if (/meritor/.test(text)) return 'pickups';
@@ -1584,16 +1652,21 @@ const categoryConfig = [
   { id: 'areas',         label: 'Areas & Villages',   icon: '◉' },
   { id: 'emergency',     label: 'Emergency Services', icon: '✦' },
   { id: 'medical',       label: 'Hospitals & GPs',    icon: '✚' },
+  { id: 'care',          label: 'Care Homes',         icon: '♥' },
   { id: 'pubs',          label: 'Pubs & Bars',        icon: '♛' },
   { id: 'clubs',         label: 'Clubs',              icon: '♟' },
   { id: 'shops',         label: 'Supermarkets & Shops', icon: '⬢' },
+  { id: 'petrol',        label: 'Petrol Stations',    icon: '⛽' },
   { id: 'hotels',        label: 'Hotels',             icon: '⬟' },
   { id: 'food',          label: 'Restaurants & Food', icon: '◆' },
   { id: 'stations',      label: 'Train Stations',     icon: '➤' },
   { id: 'education',     label: 'Schools & College',  icon: '✎' },
   { id: 'banks',         label: 'Banks',              icon: '£' },
-  { id: 'entertainment', label: 'Entertainment',      icon: '★' },
+  { id: 'entertainment', label: 'Entertainment & Gyms', icon: '★' },
   { id: 'parks',         label: 'Parks & Recreation', icon: '♣' },
+  { id: 'civic',         label: 'Civic & Council',    icon: '⌂' },
+  { id: 'attraction',    label: 'Attractions & Museums', icon: '◈' },
+  { id: 'industrial',    label: 'Industrial Estates', icon: '▣' },
   { id: 'pickups',       label: 'Pickup / Drop-off Points', icon: '⊕' },
   { id: 'other',         label: 'Other Landmarks',    icon: '·' },
 ];
