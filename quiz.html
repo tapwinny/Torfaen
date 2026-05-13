@@ -793,7 +793,7 @@ button.btn.ghost {
 
     <!-- DROP-OFF MODE: drive a route, drop the passenger -->
     <div id="q-dropoff-mode" style="display: none;">
-      <div class="map-hint" id="dropoff-hint">Pick-up shown in <strong style="color: var(--gold);">gold</strong>. Drag your finger/mouse to draw the route, then <strong>Confirm drop-off</strong> at the end. Aim within 50m of the destination.</div>
+      <div class="map-hint" id="dropoff-hint">Pick-up shown in <strong style="color: var(--gold);">pink</strong>. Drag your finger/mouse to draw the route, then <strong>Confirm drop-off</strong> at the end. Aim within 50m of the destination.</div>
       <div id="dropoff-map"></div>
       <div class="dropoff-controls">
         <button class="btn ghost" id="btn-clear-route" type="button">⟲ Clear route</button>
@@ -1189,17 +1189,21 @@ function initDropoffMap() {
     dropoffIsDrawing = true;
     // Disable map drag so the gesture is drawing-only
     dropoffMap.dragging.disable();
-    // Clear any previous route on this question
-    if (dropoffRouteLine) {
-      dropoffMap.removeLayer(dropoffRouteLine);
-      dropoffRouteLine = null;
+    // If we already have route points from a previous stroke, just continue the same line.
+    // Add the new point so the line connects from the previous stroke's end to this new start.
+    if (dropoffRouteCoords.length === 0) {
+      // First stroke ever on this question — create a fresh polyline
+      dropoffRouteCoords = [[latlng.lat, latlng.lng]];
+      dropoffRouteLine = L.polyline(dropoffRouteCoords, {
+        color: '#8b5cf6',
+        weight: 4,
+        opacity: 0.8,
+      }).addTo(dropoffMap);
+    } else {
+      // Continuing — add the new starting point onto the existing line
+      dropoffRouteCoords.push([latlng.lat, latlng.lng]);
+      dropoffRouteLine.setLatLngs(dropoffRouteCoords);
     }
-    dropoffRouteCoords = [[latlng.lat, latlng.lng]];
-    dropoffRouteLine = L.polyline(dropoffRouteCoords, {
-      color: '#8b5cf6',
-      weight: 4,
-      opacity: 0.8,
-    }).addTo(dropoffMap);
     updateDropoffStatus();
   }
 
