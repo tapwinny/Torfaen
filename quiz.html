@@ -793,7 +793,7 @@ button.btn.ghost {
 
     <!-- DROP-OFF MODE: drive a route, drop the passenger -->
     <div id="q-dropoff-mode" style="display: none;">
-      <div class="map-hint" id="dropoff-hint">Pick-up shown in <strong style="color: var(--gold);">pink</strong>. Drag your finger/mouse to draw the route, then <strong>Confirm drop-off</strong> at the end. Aim within 50m of the destination.</div>
+      <div class="map-hint" id="dropoff-hint">Pick-up shown in <strong style="color: var(--gold);">pink</strong>. <strong>Left-click + drag</strong> to draw (desktop) or <strong>one-finger drag</strong> (mobile). To pan the map: <strong>right-click + drag</strong> or <strong>two-finger drag</strong>. Aim within 50m of the destination.</div>
       <div id="dropoff-map"></div>
       <div class="dropoff-controls">
         <button class="btn ghost" id="btn-clear-route" type="button">⟲ Clear route</button>
@@ -1226,29 +1226,66 @@ function initDropoffMap() {
     updateDropoffStatus();
   }
 
-  // Mouse events
-  dropoffMap.on('mousedown', e => {
-    if (e.originalEvent.button !== 0) return;  // only left button
-    startDraw(e.latlng);
-    e.originalEvent.preventDefault();
+  // ============ MOUSE: left-click draws, right-click pans ============
+  // Leaflet's native drag stays enabled so right-button drag pans normally.
+  // We intercept left-button mousedown to start drawing instead.
+  let leftMouseDown = false;
+  mapDiv.addEventListener('mousedown', e => {
+    if (answered) return;
+    if (e.button === 0) {
+      leftMouseDown = true;
+      dropoffMap.dragging.disable();
+      const rect = mapDiv.getBoundingClientRect();
+      const layerPoint = L.point(e.clientX - rect.left, e.clientY - rect.top);
+      const latlng = dropoffMap.containerPointToLatLng(layerPoint);
+      startDraw(latlng);
+      e.preventDefault();
+    }
+    // Right/middle button: let Leaflet handle it — map pans normally
   });
-  dropoffMap.on('mousemove', e => continueDraw(e.latlng));
-  dropoffMap.on('mouseup', () => endDraw());
+  mapDiv.addEventListener('mousemove', e => {
+    if (!leftMouseDown || !dropoffIsDrawing) return;
+    const rect = mapDiv.getBoundingClientRect();
+    const layerPoint = L.point(e.clientX - rect.left, e.clientY - rect.top);
+    const latlng = dropoffMap.containerPointToLatLng(layerPoint);
+    continueDraw(latlng);
+  });
+  window.addEventListener('mouseup', () => {
+    if (leftMouseDown) {
+      leftMouseDown = false;
+      endDraw();
+      dropoffMap.dragging.enable();
+    }
+  });
+  // Suppress the right-click context menu over the map so right-drag panning works smoothly
+  mapDiv.addEventListener('contextmenu', e => e.preventDefault());
 
-  // Touch events (mobile)
+  // ============ TOUCH: one finger draws, two fingers pan/zoom ============
   mapDiv.addEventListener('touchstart', e => {
     if (answered) return;
-    if (e.touches.length !== 1) return;
-    const touch = e.touches[0];
-    const rect = mapDiv.getBoundingClientRect();
-    const layerPoint = L.point(touch.clientX - rect.left, touch.clientY - rect.top);
-    const latlng = dropoffMap.containerPointToLatLng(layerPoint);
-    startDraw(latlng);
-    e.preventDefault();
+    if (e.touches.length === 1) {
+      // Single finger → draw
+      dropoffMap.dragging.disable();
+      const touch = e.touches[0];
+      const rect = mapDiv.getBoundingClientRect();
+      const layerPoint = L.point(touch.clientX - rect.left, touch.clientY - rect.top);
+      const latlng = dropoffMap.containerPointToLatLng(layerPoint);
+      startDraw(latlng);
+      e.preventDefault();
+    } else {
+      // 2+ fingers → pan/zoom; abandon any draw in progress
+      if (dropoffIsDrawing) endDraw();
+      dropoffMap.dragging.enable();
+    }
   }, { passive: false });
   mapDiv.addEventListener('touchmove', e => {
     if (!dropoffIsDrawing) return;
-    if (e.touches.length !== 1) return;
+    if (e.touches.length !== 1) {
+      // A second finger appeared — end the stroke, let map gesture take over
+      endDraw();
+      dropoffMap.dragging.enable();
+      return;
+    }
     const touch = e.touches[0];
     const rect = mapDiv.getBoundingClientRect();
     const layerPoint = L.point(touch.clientX - rect.left, touch.clientY - rect.top);
@@ -1256,8 +1293,16 @@ function initDropoffMap() {
     continueDraw(latlng);
     e.preventDefault();
   }, { passive: false });
-  mapDiv.addEventListener('touchend', () => endDraw());
-  mapDiv.addEventListener('touchcancel', () => endDraw());
+  mapDiv.addEventListener('touchend', e => {
+    if (e.touches.length === 0) {
+      endDraw();
+      dropoffMap.dragging.enable();
+    }
+  });
+  mapDiv.addEventListener('touchcancel', () => {
+    endDraw();
+    dropoffMap.dragging.enable();
+  });
 
   setTimeout(() => dropoffMap.invalidateSize(), 100);
 }
