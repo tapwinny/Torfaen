@@ -676,6 +676,63 @@ body {
   }
 }
 
+/* ====== AREA BANNER (always-visible "you're in X" indicator) ====== */
+.map-wrap {
+  position: relative;
+}
+
+.area-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  z-index: 500;
+  background: rgba(15, 10, 23, 0.92);
+  border: 1px solid var(--rust);
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.5);
+  padding: 8px 16px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.area-banner.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.area-banner .area-banner-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-right: 8px;
+  border-right: 1px solid var(--line);
+  padding-right: 8px;
+}
+
+.area-banner[data-town="blaenavon"] {
+  border-color: #ff3eb8;
+  box-shadow: 0 0 16px rgba(255, 62, 184, 0.55);
+}
+.area-banner[data-town="pontypool"] {
+  border-color: #ff8acf;
+  box-shadow: 0 0 16px rgba(255, 138, 207, 0.55);
+}
+.area-banner[data-town="cwmbran"] {
+  border-color: #a855f7;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.55);
+}
+
 /* ====== STEP NAVIGATOR (cycles through filtered pins) ====== */
 .step-nav {
   display: none;  /* shown only when there's something to navigate */
@@ -1192,7 +1249,10 @@ footer {
       </div>
       <div id="search-results" class="search-results"></div>
       <div id="category-filters" class="category-filters"></div>
-      <div id="map"></div>
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div id="area-banner" class="area-banner" role="status" aria-live="polite"></div>
+      </div>
       <div id="step-nav" class="step-nav" role="navigation" aria-label="Step through filtered pins">
         <span class="step-nav-label">Step:</span>
         <button id="step-prev" class="step-nav-btn" type="button" aria-label="Previous">◀</button>
@@ -1750,6 +1810,25 @@ function findContainingAreaId(lat, lng) {
   return null;
 }
 
+// Update the floating "you are in X" banner above the map.
+// Pass null/undefined to hide it.
+function updateAreaBanner(areaId) {
+  const banner = document.getElementById('area-banner');
+  if (!banner) return;
+  if (!areaId) {
+    banner.classList.remove('visible');
+    return;
+  }
+  const area = areas.find(a => a.id === areaId);
+  if (!area) {
+    banner.classList.remove('visible');
+    return;
+  }
+  banner.innerHTML = `<span class="area-banner-label">Area</span>${area.name}`;
+  banner.setAttribute('data-town', area.town);
+  banner.classList.add('visible');
+}
+
 // Category metadata — defines display order, label, and icon
 const categoryConfig = [
   { id: 'areas',         label: 'Areas & Villages',   icon: '◉' },
@@ -1864,6 +1943,10 @@ function activateArea(id, openPopup = true, scrollToMap = false) {
   //                           - If it's an area → its own polygon
   //                           - If it's a landmark → the polygon of whichever area CONTAINS the landmark
   const isResidentialArea = areaBoundaries.hasOwnProperty(id);
+  // Which area's polygon should we highlight? Own area if it IS an area, else the containing area.
+  const highlightId = isResidentialArea ? id : findContainingAreaId(area.lat, area.lng);
+  // Update the floating area banner (always-visible "you're in X" indicator)
+  updateAreaBanner(highlightId);
 
   if (boundariesVisible) {
     // Boundaries already drawn — just ensure this one (if area) is visible past filters
@@ -1884,9 +1967,7 @@ function activateArea(id, openPopup = true, scrollToMap = false) {
       }
     }
   } else {
-    // Boundaries off → solo highlight system
-    // Figure out which area to highlight (own area if it IS an area, else containing area)
-    const highlightId = isResidentialArea ? id : findContainingAreaId(area.lat, area.lng);
+    // Boundaries off → solo highlight system (uses highlightId computed above)
 
     // Clear any previous solo polygon
     if (soloHighlightPolygon) {
