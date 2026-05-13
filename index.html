@@ -1921,6 +1921,12 @@ function activateArea(id, openPopup = true, scrollToMap = false) {
   if (openPopup) {
     markers[id].openPopup();
   }
+
+  // Sync the step navigator: if this area is in the current filtered set,
+  // update the counter so prev/next continues from here rather than restarting.
+  if (typeof syncStepIndex === 'function') {
+    syncStepIndex(id);
+  }
 }
 
 // Init
@@ -2409,6 +2415,16 @@ function stepTo(newIndex) {
   const area = stepList[stepIndex];
   activateArea(area.id, true, false);
   updateStepNavUI();
+}
+
+// Find the given area in the step list and update the counter to match.
+// Called by activateArea so manual clicks (pins, list items, polygons) keep prev/next in sync.
+function syncStepIndex(id) {
+  const idx = stepList.findIndex(a => a.id === id);
+  if (idx >= 0) {
+    stepIndex = idx;
+    updateStepNavUI();
+  }
 }
 
 stepPrev.addEventListener('click', () => stepTo(stepIndex - 1));
