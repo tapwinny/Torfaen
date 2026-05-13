@@ -1725,6 +1725,10 @@ function renderAreas() {
 
 // ============ ACTIVATE ============
 let activeId = null;
+// When boundaries toggle is OFF, but the user clicks an area, we show just that one polygon.
+// This variable holds the currently-shown solo polygon so we can replace it on next click.
+let soloHighlightPolygon = null;
+let soloHighlightLabel = null;
 
 function activateArea(id, openPopup = true, scrollToMap = false) {
   // Deactivate previous
@@ -1749,13 +1753,63 @@ function activateArea(id, openPopup = true, scrollToMap = false) {
   if (marker && !map.hasLayer(marker)) {
     marker.addTo(map);
   }
-  // If this is a residential area with a boundary polygon, force-show that too
-  // (only matters if boundaries are currently enabled)
-  if (boundariesVisible && polygonLayers[id]) {
-    const poly = polygonLayers[id];
-    if (!map.hasLayer(poly)) poly.addTo(map);
-    const label = boundaryLabels[id];
-    if (label && !map.hasLayer(label)) label.addTo(map);
+  // Polygon handling for residential areas:
+  //   If boundaries toggle is ON  → make sure this area's polygon is visible (force past filters)
+  //   If boundaries toggle is OFF → draw a single "solo" polygon for this area only,
+  //                                  replacing any previously-drawn solo one
+  const isResidentialArea = areaBoundaries.hasOwnProperty(id);
+  if (isResidentialArea) {
+    if (boundariesVisible && polygonLayers[id]) {
+      const poly = polygonLayers[id];
+      if (!map.hasLayer(poly)) poly.addTo(map);
+      const label = boundaryLabels[id];
+      if (label && !map.hasLayer(label)) label.addTo(map);
+    } else if (!boundariesVisible) {
+      // Remove any previous solo polygon
+      if (soloHighlightPolygon) {
+        map.removeLayer(soloHighlightPolygon);
+        soloHighlightPolygon = null;
+      }
+      if (soloHighlightLabel) {
+        map.removeLayer(soloHighlightLabel);
+        soloHighlightLabel = null;
+      }
+      // Draw the new one
+      const coords = areaBoundaries[id];
+      const color = getBoundaryColor(id);
+      soloHighlightPolygon = L.polygon(coords, {
+        color: color,
+        weight: 3.5,
+        opacity: 1,
+        fillColor: color,
+        fillOpacity: 0.18,
+        interactive: false,
+        lineJoin: 'round',
+        lineCap: 'round'
+      }).addTo(map);
+      // Label for the solo polygon
+      const labelIcon = L.divIcon({
+        className: 'boundary-label-wrapper',
+        html: `<div class="boundary-label" data-town="${area.town}">${area.name}</div>`,
+        iconSize: null,
+        iconAnchor: [0, 0]
+      });
+      soloHighlightLabel = L.marker([area.lat, area.lng], {
+        icon: labelIcon,
+        interactive: false,
+        keyboard: false
+      }).addTo(map);
+    }
+  } else {
+    // Not an area pin — clear any solo polygon if one was up
+    if (soloHighlightPolygon) {
+      map.removeLayer(soloHighlightPolygon);
+      soloHighlightPolygon = null;
+    }
+    if (soloHighlightLabel) {
+      map.removeLayer(soloHighlightLabel);
+      soloHighlightLabel = null;
+    }
   }
 
   // Highlight list item.
@@ -2576,6 +2630,16 @@ function disableBoundaryEditing() {
 boundariesToggle.addEventListener('click', () => {
   boundariesVisible = !boundariesVisible;
   boundariesToggle.classList.toggle('active', boundariesVisible);
+  // Clear any solo-highlight polygon — it gets superseded by the full boundary system,
+  // and if we're turning OFF we want a clean state too.
+  if (soloHighlightPolygon) {
+    map.removeLayer(soloHighlightPolygon);
+    soloHighlightPolygon = null;
+  }
+  if (soloHighlightLabel) {
+    map.removeLayer(soloHighlightLabel);
+    soloHighlightLabel = null;
+  }
   if (boundariesVisible) {
     boundariesToggle.textContent = '⬡ Hide boundaries';
     boundariesEdit.disabled = false;
