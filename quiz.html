@@ -148,9 +148,13 @@ h2 {
 /* ====== START SCREEN ====== */
 .mode-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 20px;
   margin-top: 28px;
+}
+
+@media (max-width: 950px) {
+  .mode-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 680px) {
@@ -428,6 +432,71 @@ button.btn.ghost {
   font-family: 'Inter', sans-serif;
 }
 
+/* ====== DROP-OFF MODE ====== */
+#dropoff-map {
+  height: 60vh;
+  min-height: 420px;
+  background: var(--paper-dark);
+  border: 1px solid var(--line-bright);
+  margin-bottom: 12px;
+  cursor: crosshair;
+  /* Disable touch scrolling while drawing on the map */
+  touch-action: none;
+}
+
+.dropoff-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.dropoff-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.dropoff-status.has-route {
+  color: var(--gold);
+}
+
+/* Marker styles for drop-off mode */
+.dropoff-marker-start {
+  background: var(--gold);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  box-shadow: 0 0 16px rgba(240, 171, 252, 0.9);
+}
+
+.dropoff-marker-end {
+  background: var(--rust);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  box-shadow: 0 0 18px rgba(217, 70, 239, 0.9);
+}
+
+.dropoff-marker-actual {
+  background: var(--green);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  box-shadow: 0 0 18px rgba(74, 222, 128, 0.9);
+  animation: pulse-correct 1.4s ease-in-out infinite;
+}
+
+/* Used during the drawing — the route line follows the cursor */
+.route-line-drawing { stroke: var(--moss); stroke-width: 4; fill: none; opacity: 0.8; }
+.route-line-final   { stroke: var(--gold); stroke-width: 4; fill: none; opacity: 0.95; }
+
 .feedback {
   background: var(--paper-dark);
   border: 1px solid var(--line);
@@ -663,6 +732,13 @@ button.btn.ghost {
         <p>Which area is <em>The Open Hearth</em> in? <em>Tesco Llantarnam</em>? You'll be shown a landmark and pick the area it sits in.</p>
         <div class="mode-meta">Multiple choice · 20 questions</div>
       </button>
+
+      <button class="mode-card" data-mode="dropoff">
+        <div class="mode-icon">⊕</div>
+        <h3>Drop-off</h3>
+        <p>"Take me from <em>Morrisons</em> to <em>New Inn Station</em>." Drive the route yourself by drawing on the map. Land within 50m of the destination to pass.</p>
+        <div class="mode-meta">Map · 20 questions</div>
+      </button>
     </div>
   </div>
 
@@ -715,6 +791,16 @@ button.btn.ghost {
       <div id="quiz-map"></div>
     </div>
 
+    <!-- DROP-OFF MODE: drive a route, drop the passenger -->
+    <div id="q-dropoff-mode" style="display: none;">
+      <div class="map-hint" id="dropoff-hint">Pick-up shown in <strong style="color: var(--gold);">gold</strong>. Drag your finger/mouse to draw the route, then <strong>Confirm drop-off</strong> at the end. Aim within 50m of the destination.</div>
+      <div id="dropoff-map"></div>
+      <div class="dropoff-controls">
+        <button class="btn ghost" id="btn-clear-route" type="button">⟲ Clear route</button>
+        <span class="dropoff-status" id="dropoff-status">Tap the map to start drawing</span>
+      </div>
+    </div>
+
     <!-- LANDMARKS MODE: multiple choice -->
     <div id="q-choices-mode" style="display: none;">
       <div class="choices" id="q-choices"></div>
@@ -727,6 +813,7 @@ button.btn.ghost {
 
     <div class="action-bar">
       <button class="btn primary" id="btn-confirm-guess" disabled style="display: none;">Confirm placement ✓</button>
+      <button class="btn primary" id="btn-confirm-dropoff" disabled style="display: none;">Confirm drop-off ✓</button>
       <button class="btn primary" id="btn-next" style="display: none;">Next question →</button>
       <button class="btn ghost" id="btn-skip">Skip</button>
       <button class="btn ghost" id="btn-quit">Quit quiz</button>
@@ -784,6 +871,15 @@ let quizMap = null;
 let guessMarker = null;
 let correctMarker = null;
 let distanceLine = null;
+
+// Map (for drop-off mode)
+let dropoffMap = null;
+let dropoffStartMarker = null;       // gold pin: where the journey starts
+let dropoffActualMarker = null;      // green pin: revealed correct destination
+let dropoffRouteLine = null;         // polyline of the user's drawn route
+let dropoffRouteCoords = [];         // [[lat,lng], ...] coordinates of route
+let dropoffIsDrawing = false;
+let dropoffDistanceLine = null;
 
 // =============== SCREEN MANAGEMENT ===============
 function showScreen(id) {
@@ -904,6 +1000,11 @@ function setupForMode() {
     title.textContent = 'Set up Areas quiz';
     subtitle.textContent = 'You\'ll be shown an area name and have to tap its location on the map.';
     catBlock.style.display = 'none';
+  } else if (currentMode === 'dropoff') {
+    title.textContent = 'Set up Drop-off quiz';
+    subtitle.textContent = 'You\'ll be given a pick-up and a destination. Drive there by drawing your route, and drop the passenger within 50m of the actual spot.';
+    catBlock.style.display = 'block';
+    renderCategoryChips();
   } else {
     title.textContent = 'Set up Landmarks quiz';
     subtitle.textContent = 'You\'ll be shown a landmark and pick the area it sits in.';
@@ -969,6 +1070,13 @@ function getQuestionableItems() {
     if (currentMode === 'areas') {
       // Areas mode: only residential areas with a boundary polygon
       return areaBoundaries.hasOwnProperty(a.id);
+    } else if (currentMode === 'dropoff') {
+      // Drop-off mode: any landmark (not residential areas — they're too broad to "arrive" at within 50m)
+      const cat = getAreaCategory(a);
+      if (cat === 'areas') return false;
+      // No category filter for dropoff — all landmarks are fair game (set if active, else all)
+      if (activeCategories.size > 0 && !activeCategories.has(cat)) return false;
+      return true;
     } else {
       // Landmarks mode: landmark pins with an active category
       const cat = getAreaCategory(a);
@@ -990,11 +1098,23 @@ function updateAvailableCount() {
 
 // =============== QUIZ START ===============
 document.getElementById('btn-start-quiz').addEventListener('click', () => {
-  const pool = getQuestionableItems();
+  let pool = getQuestionableItems();
   if (pool.length < 4) return;
   const shuffled = shuffle(pool);
-  // Cap at 20 questions, but if fewer available, repeat? Better: just use what we've got.
-  questionPool = shuffled.slice(0, Math.min(QUESTIONS_PER_QUIZ, shuffled.length));
+
+  if (currentMode === 'dropoff') {
+    // Drop-off mode: each question is a (start, destination) pair.
+    // Pair each destination with a random different landmark as start.
+    questionPool = shuffled.slice(0, Math.min(QUESTIONS_PER_QUIZ, shuffled.length)).map(dest => {
+      // Pick a start that's different from the destination and in the filtered pool
+      const candidates = shuffled.filter(c => c.id !== dest.id);
+      const start = candidates[Math.floor(Math.random() * candidates.length)];
+      return { ...dest, _start: start };
+    });
+  } else {
+    questionPool = shuffled.slice(0, Math.min(QUESTIONS_PER_QUIZ, shuffled.length));
+  }
+
   qIndex = 0;
   correctCount = 0;
   wrongCount = 0;
@@ -1003,12 +1123,12 @@ document.getElementById('btn-start-quiz').addEventListener('click', () => {
   showScreen('screen-quiz');
 
   // Show the right answer panel for this mode
-  document.getElementById('q-map-mode').style.display = currentMode === 'areas' ? 'block' : 'none';
+  document.getElementById('q-map-mode').style.display     = currentMode === 'areas'     ? 'block' : 'none';
   document.getElementById('q-choices-mode').style.display = currentMode === 'landmarks' ? 'block' : 'none';
+  document.getElementById('q-dropoff-mode').style.display = currentMode === 'dropoff'   ? 'block' : 'none';
 
-  if (currentMode === 'areas') {
-    initQuizMap();
-  }
+  if (currentMode === 'areas')   initQuizMap();
+  if (currentMode === 'dropoff') initDropoffMap();
   renderQuestion();
 });
 
@@ -1039,6 +1159,216 @@ function initQuizMap() {
 
   setTimeout(() => quizMap.invalidateSize(), 100);
 }
+
+// ============ DROP-OFF MODE MAP ============
+function initDropoffMap() {
+  if (dropoffMap) {
+    dropoffMap.remove();
+    dropoffMap = null;
+  }
+  dropoffMap = L.map('dropoff-map', {
+    zoomControl: true,
+    scrollWheelZoom: true,
+    // We control dragging ourselves — disable Leaflet's drag-to-pan during route drawing
+  }).setView([51.70, -3.05], 11);
+
+  // Same no-labels tile style as the Areas quiz
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap, © CartoDB',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(dropoffMap);
+
+  // ============ DRAWING LOGIC ============
+  // The user presses down → starts a route. Drags → adds points. Releases → ends route.
+  // While drawing we disable map panning so the gesture is dedicated to drawing.
+  const mapDiv = document.getElementById('dropoff-map');
+
+  function startDraw(latlng) {
+    if (answered) return;
+    dropoffIsDrawing = true;
+    // Disable map drag so the gesture is drawing-only
+    dropoffMap.dragging.disable();
+    // Clear any previous route on this question
+    if (dropoffRouteLine) {
+      dropoffMap.removeLayer(dropoffRouteLine);
+      dropoffRouteLine = null;
+    }
+    dropoffRouteCoords = [[latlng.lat, latlng.lng]];
+    dropoffRouteLine = L.polyline(dropoffRouteCoords, {
+      color: '#8b5cf6',
+      weight: 4,
+      opacity: 0.8,
+    }).addTo(dropoffMap);
+    updateDropoffStatus();
+  }
+
+  function continueDraw(latlng) {
+    if (!dropoffIsDrawing) return;
+    // Only add point if it's moved a meaningful distance from the last (avoid huge arrays)
+    const last = dropoffRouteCoords[dropoffRouteCoords.length - 1];
+    if (last) {
+      const d = distanceMetres(last[0], last[1], latlng.lat, latlng.lng);
+      if (d < 5) return;  // skip tiny moves
+    }
+    dropoffRouteCoords.push([latlng.lat, latlng.lng]);
+    dropoffRouteLine.setLatLngs(dropoffRouteCoords);
+  }
+
+  function endDraw() {
+    if (!dropoffIsDrawing) return;
+    dropoffIsDrawing = false;
+    dropoffMap.dragging.enable();
+    updateDropoffStatus();
+  }
+
+  // Mouse events
+  dropoffMap.on('mousedown', e => {
+    if (e.originalEvent.button !== 0) return;  // only left button
+    startDraw(e.latlng);
+    e.originalEvent.preventDefault();
+  });
+  dropoffMap.on('mousemove', e => continueDraw(e.latlng));
+  dropoffMap.on('mouseup', () => endDraw());
+
+  // Touch events (mobile)
+  mapDiv.addEventListener('touchstart', e => {
+    if (answered) return;
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const rect = mapDiv.getBoundingClientRect();
+    const layerPoint = L.point(touch.clientX - rect.left, touch.clientY - rect.top);
+    const latlng = dropoffMap.containerPointToLatLng(layerPoint);
+    startDraw(latlng);
+    e.preventDefault();
+  }, { passive: false });
+  mapDiv.addEventListener('touchmove', e => {
+    if (!dropoffIsDrawing) return;
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const rect = mapDiv.getBoundingClientRect();
+    const layerPoint = L.point(touch.clientX - rect.left, touch.clientY - rect.top);
+    const latlng = dropoffMap.containerPointToLatLng(layerPoint);
+    continueDraw(latlng);
+    e.preventDefault();
+  }, { passive: false });
+  mapDiv.addEventListener('touchend', () => endDraw());
+  mapDiv.addEventListener('touchcancel', () => endDraw());
+
+  setTimeout(() => dropoffMap.invalidateSize(), 100);
+}
+
+function updateDropoffStatus() {
+  const status = document.getElementById('dropoff-status');
+  const confirmBtn = document.getElementById('btn-confirm-dropoff');
+  if (dropoffRouteCoords.length < 2) {
+    status.textContent = 'Tap the map and drag to draw your route';
+    status.classList.remove('has-route');
+    confirmBtn.disabled = true;
+  } else {
+    const last = dropoffRouteCoords[dropoffRouteCoords.length - 1];
+    status.innerHTML = `Route ends at <strong>${last[0].toFixed(5)}, ${last[1].toFixed(5)}</strong> — confirm when ready`;
+    status.classList.add('has-route');
+    confirmBtn.disabled = false;
+  }
+}
+
+// Clear-route button (defined inline so it's available immediately)
+document.addEventListener('DOMContentLoaded', () => {});  // no-op placeholder
+
+document.getElementById('btn-clear-route').addEventListener('click', () => {
+  if (answered) return;
+  if (dropoffRouteLine) {
+    dropoffMap.removeLayer(dropoffRouteLine);
+    dropoffRouteLine = null;
+  }
+  dropoffRouteCoords = [];
+  updateDropoffStatus();
+});
+
+// ============ DROP-OFF SUBMIT ============
+function submitDropoff() {
+  if (answered || dropoffRouteCoords.length < 2) return;
+  answered = true;
+
+  const target = questionPool[qIndex];
+  const endPoint = dropoffRouteCoords[dropoffRouteCoords.length - 1];
+  const dist = distanceMetres(endPoint[0], endPoint[1], target.lat, target.lng);
+
+  // Show the actual destination
+  if (dropoffActualMarker) dropoffMap.removeLayer(dropoffActualMarker);
+  dropoffActualMarker = L.marker([target.lat, target.lng], {
+    icon: L.divIcon({
+      className: 'quiz-marker-icon',
+      html: '<div class="dropoff-marker-actual"></div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+    }),
+  }).addTo(dropoffMap);
+
+  // Draw a dashed line from drop-off attempt → actual destination
+  if (dropoffDistanceLine) dropoffMap.removeLayer(dropoffDistanceLine);
+  dropoffDistanceLine = L.polyline([endPoint, [target.lat, target.lng]], {
+    color: '#f0abfc',
+    weight: 2,
+    dashArray: '6 4',
+    opacity: 0.9,
+  }).addTo(dropoffMap);
+
+  // Fit bounds so user sees their drop, the actual destination, and their route end
+  const allCoords = dropoffRouteCoords.concat([[target.lat, target.lng]]);
+  const bounds = L.latLngBounds(allCoords);
+  dropoffMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+
+  // Change route line to gold (final state)
+  if (dropoffRouteLine) {
+    dropoffRouteLine.setStyle({ color: '#f0abfc', opacity: 0.95 });
+  }
+
+  showDropoffFeedback(target, dist);
+
+  // Hide the Confirm button, show Next
+  const confirmBtn = document.getElementById('btn-confirm-dropoff');
+  confirmBtn.style.display = 'none';
+}
+
+function showDropoffFeedback(target, dist) {
+  const fb = document.getElementById('q-feedback');
+  const lbl = document.getElementById('q-feedback-label');
+  const txt = document.getElementById('q-feedback-text');
+  fb.classList.remove('correct', 'wrong');
+  fb.classList.add('visible');
+
+  // Two thresholds: 20m = perfect, 50m = acceptable, beyond = miss
+  if (dist <= 20) {
+    correctCount++;
+    fb.classList.add('correct');
+    lbl.textContent = '✓ Perfect drop';
+    txt.innerHTML = `You dropped the passenger ${formatDistance(dist)} from <strong>${target.name}</strong>. Spot on.`;
+  } else if (dist <= 50) {
+    correctCount++;
+    fb.classList.add('correct');
+    lbl.textContent = '✓ Acceptable drop';
+    txt.innerHTML = `You dropped ${formatDistance(dist)} from <strong>${target.name}</strong>. Within sight — the passenger can walk the rest.`;
+  } else {
+    wrongCount++;
+    fb.classList.add('wrong');
+    lbl.textContent = '✗ Missed the destination';
+    txt.innerHTML = `<strong>${target.name}</strong> was ${formatDistance(dist)} away. The passenger would still be searching.`;
+    wrongAnswers.push({
+      question: `${target._start ? target._start.name : 'Start'} → ${target.name}`,
+      yourAnswer: `dropped ${formatDistance(dist)} away`,
+      correct: target.name,
+    });
+  }
+  updateScoreUI();
+  document.getElementById('btn-next').style.display = 'inline-block';
+  document.getElementById('btn-skip').style.display = 'none';
+}
+
+document.getElementById('btn-confirm-dropoff').addEventListener('click', () => {
+  submitDropoff();
+});
 
 function placeGuess(latlng) {
   if (guessMarker) {
@@ -1205,14 +1535,13 @@ function renderQuestion() {
   document.getElementById('btn-next').style.display = 'none';
   document.getElementById('btn-skip').style.display = 'inline-block';
 
-  // Manage the Confirm button: shown only in Areas mode, hidden + disabled at the start of each question
-  const confirmBtn = document.getElementById('btn-confirm-guess');
-  if (currentMode === 'areas') {
-    confirmBtn.style.display = 'inline-block';
-    confirmBtn.disabled = true;  // re-enabled once user places a pin
-  } else {
-    confirmBtn.style.display = 'none';
-  }
+  // Manage the Confirm buttons: each mode has its own
+  const confirmGuessBtn = document.getElementById('btn-confirm-guess');
+  const confirmDropoffBtn = document.getElementById('btn-confirm-dropoff');
+  confirmGuessBtn.style.display = currentMode === 'areas' ? 'inline-block' : 'none';
+  confirmGuessBtn.disabled = true;
+  confirmDropoffBtn.style.display = currentMode === 'dropoff' ? 'inline-block' : 'none';
+  confirmDropoffBtn.disabled = true;
 
   if (currentMode === 'areas') {
     document.getElementById('q-prompt').textContent = 'Where on the map is...';
@@ -1229,6 +1558,34 @@ function renderQuestion() {
     });
     // Reset view to whole borough so they don't get clues about where to look
     quizMap.setView([51.70, -3.05], 11);
+  } else if (currentMode === 'dropoff') {
+    // Drop-off mode: show pickup name + destination name in the question
+    const start = target._start;
+    document.getElementById('q-prompt').textContent = 'Drive the passenger from';
+    document.getElementById('q-target').innerHTML = `${start.name}<span style="color: var(--ink-muted); font-size: 18px;">  →  </span>${target.name}`;
+    document.getElementById('q-target-note').textContent = `Pick-up in ${capitalize(start.town)} · destination in ${capitalize(target.town)}`;
+
+    // Reset map state
+    if (dropoffRouteLine)    { dropoffMap.removeLayer(dropoffRouteLine);    dropoffRouteLine = null; }
+    if (dropoffStartMarker)  { dropoffMap.removeLayer(dropoffStartMarker);  dropoffStartMarker = null; }
+    if (dropoffActualMarker) { dropoffMap.removeLayer(dropoffActualMarker); dropoffActualMarker = null; }
+    if (dropoffDistanceLine) { dropoffMap.removeLayer(dropoffDistanceLine); dropoffDistanceLine = null; }
+    dropoffRouteCoords = [];
+
+    // Place the START marker (visible to the user)
+    dropoffStartMarker = L.marker([start.lat, start.lng], {
+      icon: L.divIcon({
+        className: 'quiz-marker-icon',
+        html: '<div class="dropoff-marker-start"></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+      }),
+      interactive: false,
+    }).addTo(dropoffMap);
+
+    // Centre the view on the start so user can begin drawing
+    dropoffMap.setView([start.lat, start.lng], 14);
+    updateDropoffStatus();
   } else {
     document.getElementById('q-prompt').textContent = 'Which area is this in...';
     document.getElementById('q-target').textContent = target.name;
@@ -1298,12 +1655,23 @@ document.getElementById('btn-skip').addEventListener('click', () => {
   // Skipped = wrong
   wrongCount++;
   const target = questionPool[qIndex];
-  const correctAreaId = currentMode === 'areas' ? target.id : findContainingAreaId(target.lat, target.lng);
-  const correctArea = areas.find(a => a.id === correctAreaId);
+  let questionLabel, correctLabel;
+  if (currentMode === 'areas') {
+    questionLabel = target.name;
+    correctLabel = target.name;
+  } else if (currentMode === 'dropoff') {
+    questionLabel = `${target._start ? target._start.name : 'Start'} → ${target.name}`;
+    correctLabel = target.name;
+  } else {
+    const correctAreaId = findContainingAreaId(target.lat, target.lng);
+    const correctArea = areas.find(a => a.id === correctAreaId);
+    questionLabel = target.name;
+    correctLabel = correctArea ? correctArea.name : target.name;
+  }
   wrongAnswers.push({
-    question: target.name,
+    question: questionLabel,
     yourAnswer: '(skipped)',
-    correct: correctArea ? correctArea.name : target.name,
+    correct: correctLabel,
   });
   updateScoreUI();
   qIndex++;
