@@ -796,6 +796,7 @@ button.btn.ghost {
       <div class="map-hint" id="dropoff-hint">Pick-up in <strong style="color: var(--gold);">pink</strong>. <strong>Left-click</strong> drags to draw. <strong>Right-click</strong> or <strong>hold Space</strong> drags to pan. On mobile: <strong>1 finger draws, 2 fingers pan</strong>. Aim within 50m.</div>
       <div id="dropoff-map"></div>
       <div class="dropoff-controls">
+        <button class="btn ghost" id="btn-undo-stroke" type="button" disabled>↶ Undo last</button>
         <button class="btn ghost" id="btn-clear-route" type="button">⟲ Clear route</button>
         <span class="dropoff-status" id="dropoff-status">Tap the map to start drawing</span>
       </div>
@@ -878,6 +879,7 @@ let dropoffStartMarker = null;       // gold pin: where the journey starts
 let dropoffActualMarker = null;      // green pin: revealed correct destination
 let dropoffRouteLine = null;         // polyline of the user's drawn route
 let dropoffRouteCoords = [];         // [[lat,lng], ...] coordinates of route
+let dropoffStrokeStarts = [];        // indices in dropoffRouteCoords where each stroke begins (for undo)
 let dropoffIsDrawing = false;
 let dropoffDistanceLine = null;
 
@@ -1206,6 +1208,8 @@ function initDropoffMap() {
     dropoffIsDrawing = true;
     // Disable map drag so the gesture is drawing-only
     dropoffMap.dragging.disable();
+    // Record where this new stroke begins (for undo)
+    dropoffStrokeStarts.push(dropoffRouteCoords.length);
     // If we already have route points from a previous stroke, just continue the same line.
     // Add the new point so the line connects from the previous stroke's end to this new start.
     if (dropoffRouteCoords.length === 0) {
@@ -1374,6 +1378,8 @@ function initDropoffMap() {
 function updateDropoffStatus() {
   const status = document.getElementById('dropoff-status');
   const confirmBtn = document.getElementById('btn-confirm-dropoff');
+  const undoBtn = document.getElementById('btn-undo-stroke');
+
   if (dropoffRouteCoords.length < 2) {
     status.textContent = 'Tap the map and drag to draw your route';
     status.classList.remove('has-route');
@@ -1384,6 +1390,9 @@ function updateDropoffStatus() {
     status.classList.add('has-route');
     confirmBtn.disabled = false;
   }
+
+  // Undo is available whenever there's at least one stroke in the history
+  if (undoBtn) undoBtn.disabled = dropoffStrokeStarts.length === 0;
 }
 
 // Clear-route button (defined inline so it's available immediately)
@@ -1396,6 +1405,26 @@ document.getElementById('btn-clear-route').addEventListener('click', () => {
     dropoffRouteLine = null;
   }
   dropoffRouteCoords = [];
+  dropoffStrokeStarts = [];
+  updateDropoffStatus();
+});
+
+// Undo: remove the last stroke (everything from the last stroke-start onward)
+document.getElementById('btn-undo-stroke').addEventListener('click', () => {
+  if (answered) return;
+  if (dropoffStrokeStarts.length === 0) return;
+  const lastStrokeStart = dropoffStrokeStarts.pop();
+  // Trim the coords back to just before the last stroke
+  dropoffRouteCoords = dropoffRouteCoords.slice(0, lastStrokeStart);
+  if (dropoffRouteCoords.length === 0) {
+    // Nothing left — remove the line entirely
+    if (dropoffRouteLine) {
+      dropoffMap.removeLayer(dropoffRouteLine);
+      dropoffRouteLine = null;
+    }
+  } else {
+    dropoffRouteLine.setLatLngs(dropoffRouteCoords);
+  }
   updateDropoffStatus();
 });
 
@@ -1684,6 +1713,7 @@ function renderQuestion() {
     if (dropoffActualMarker) { dropoffMap.removeLayer(dropoffActualMarker); dropoffActualMarker = null; }
     if (dropoffDistanceLine) { dropoffMap.removeLayer(dropoffDistanceLine); dropoffDistanceLine = null; }
     dropoffRouteCoords = [];
+    dropoffStrokeStarts = [];
 
     // Place the START marker (visible to the user)
     dropoffStartMarker = L.marker([start.lat, start.lng], {
