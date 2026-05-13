@@ -408,6 +408,26 @@ button.btn.ghost {
   margin-bottom: 16px;
 }
 
+.map-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--paper-dark);
+  border: 1px dashed var(--line-bright);
+  padding: 8px 14px;
+  margin-bottom: 8px;
+}
+
+.map-hint strong {
+  color: var(--rust);
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+}
+
 .feedback {
   background: var(--paper-dark);
   border: 1px solid var(--line);
@@ -691,6 +711,7 @@ button.btn.ghost {
 
     <!-- AREAS MODE: map for tapping -->
     <div id="q-map-mode">
+      <div class="map-hint">Tap the map to place a pin. Drag it to fine-tune, then click <strong>Confirm placement</strong>.</div>
       <div id="quiz-map"></div>
     </div>
 
@@ -705,6 +726,7 @@ button.btn.ghost {
     </div>
 
     <div class="action-bar">
+      <button class="btn primary" id="btn-confirm-guess" disabled style="display: none;">Confirm placement ✓</button>
       <button class="btn primary" id="btn-next" style="display: none;">Next question →</button>
       <button class="btn ghost" id="btn-skip">Skip</button>
       <button class="btn ghost" id="btn-quit">Quit quiz</button>
@@ -1001,9 +1023,12 @@ function initQuizMap() {
     scrollWheelZoom: true,
   }).setView([51.70, -3.05], 11);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap',
-    maxZoom: 18,
+  // CartoDB Positron without labels — shows road network and natural features
+  // but no place-name labels (so it's a proper test of where things are).
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap, © CartoDB',
+    subdomains: 'abcd',
+    maxZoom: 19,
   }).addTo(quizMap);
 
   // Click → place guess marker (only when not yet answered)
@@ -1016,23 +1041,38 @@ function initQuizMap() {
 }
 
 function placeGuess(latlng) {
-  if (guessMarker) quizMap.removeLayer(guessMarker);
-  guessMarker = L.marker(latlng, {
-    icon: L.divIcon({
-      className: 'quiz-marker-icon',
-      html: '<div class="quiz-marker-guess"></div>',
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-    }),
-  }).addTo(quizMap);
-  // Auto-submit after placing
-  setTimeout(() => submitAreaGuess(latlng), 400);
+  if (guessMarker) {
+    // Move the existing one rather than create a new
+    guessMarker.setLatLng(latlng);
+  } else {
+    guessMarker = L.marker(latlng, {
+      icon: L.divIcon({
+        className: 'quiz-marker-icon',
+        html: '<div class="quiz-marker-guess"></div>',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      }),
+      draggable: true,
+    }).addTo(quizMap);
+    // When dragged, just update — confirm button stays the way to submit
+    guessMarker.on('dragend', () => {
+      // No automatic submit; user must confirm
+    });
+  }
+  // Enable the Confirm button now that a pin exists
+  const confirmBtn = document.getElementById('btn-confirm-guess');
+  if (confirmBtn) confirmBtn.disabled = false;
 }
 
-function submitAreaGuess(latlng) {
-  if (answered) return;
+function submitAreaGuess() {
+  if (answered || !guessMarker) return;
   answered = true;
   const target = questionPool[qIndex];
+
+  // Get the guess position from the marker (user may have dragged it)
+  const latlng = guessMarker.getLatLng();
+  // Lock the marker now that they've confirmed
+  guessMarker.dragging.disable();
 
   // Did the guess fall inside the correct polygon?
   const guessedAreaId = findContainingAreaId(latlng.lat, latlng.lng);
@@ -1075,6 +1115,10 @@ function submitAreaGuess(latlng) {
   // Fit the map to show both points
   const bounds = L.latLngBounds([latlng, [target.lat, target.lng]]);
   quizMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+
+  // Hide the Confirm button — we're in feedback state now
+  const confirmBtn = document.getElementById('btn-confirm-guess');
+  if (confirmBtn) confirmBtn.style.display = 'none';
 
   // Show feedback
   showFeedback(inCorrectArea, target, dist, guessedAreaId);
@@ -1161,6 +1205,15 @@ function renderQuestion() {
   document.getElementById('btn-next').style.display = 'none';
   document.getElementById('btn-skip').style.display = 'inline-block';
 
+  // Manage the Confirm button: shown only in Areas mode, hidden + disabled at the start of each question
+  const confirmBtn = document.getElementById('btn-confirm-guess');
+  if (currentMode === 'areas') {
+    confirmBtn.style.display = 'inline-block';
+    confirmBtn.disabled = true;  // re-enabled once user places a pin
+  } else {
+    confirmBtn.style.display = 'none';
+  }
+
   if (currentMode === 'areas') {
     document.getElementById('q-prompt').textContent = 'Where on the map is...';
     document.getElementById('q-target').textContent = target.name;
@@ -1228,6 +1281,10 @@ function renderLandmarkChoices(target) {
 }
 
 // =============== NAVIGATION BUTTONS ===============
+document.getElementById('btn-confirm-guess').addEventListener('click', () => {
+  submitAreaGuess();
+});
+
 document.getElementById('btn-next').addEventListener('click', () => {
   qIndex++;
   if (qIndex >= questionPool.length) {
