@@ -496,6 +496,75 @@ body {
   transition: box-shadow 0.2s ease;
 }
 
+/* ====== CATEGORY FILTERS ====== */
+.category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 16px;
+  background: var(--paper-light);
+  border-bottom: 1px solid var(--line-bright);
+  align-items: center;
+}
+
+.filter-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  background: var(--paper-dark);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  user-select: none;
+}
+
+.filter-chip:hover {
+  border-color: var(--line-bright);
+  color: var(--ink);
+}
+
+.filter-chip.active {
+  background: linear-gradient(135deg, var(--rust-dark) 0%, var(--rust) 100%);
+  color: var(--ink);
+  border-color: var(--rust);
+  box-shadow: 0 0 8px rgba(217, 70, 239, 0.4);
+}
+
+.filter-chip .chip-icon {
+  font-size: 12px;
+}
+
+.filter-chip .chip-count {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0 5px;
+  border-radius: 8px;
+  font-size: 9px;
+  letter-spacing: 0;
+  margin-left: 2px;
+}
+
+.filter-chip.all-toggle {
+  background: var(--paper);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.filter-chip.all-toggle:hover {
+  background: var(--paper-dark);
+}
+
+.filter-chip.all-toggle.active {
+  background: linear-gradient(135deg, #5a3d6e 0%, var(--moss) 100%);
+  color: var(--ink);
+  border-color: var(--moss);
+}
+
 #map::after {
   content: 'Click map to scroll-zoom';
   position: absolute;
@@ -970,6 +1039,7 @@ footer {
         <button id="search-clear" type="button" aria-label="Clear search">×</button>
       </div>
       <div id="search-results" class="search-results"></div>
+      <div id="category-filters" class="category-filters"></div>
       <div id="map"></div>
       <div class="edit-panel">
         <div class="edit-controls">
@@ -1480,7 +1550,7 @@ function activateArea(id, openPopup = true, scrollToMap = false) {
 
   // Pan map. Only open popup if explicitly requested (default true for clicks from list/pin)
   const currentZoom = map.getZoom();
-  const targetZoom = Math.max(currentZoom, 14);
+  const targetZoom = Math.max(currentZoom, 15);
   map.flyTo([area.lat, area.lng], targetZoom, { duration: 0.8 });
   if (openPopup) {
     markers[id].openPopup();
@@ -1714,7 +1784,7 @@ function renderSearchResults(query) {
   if (matches.length === 1) {
     const a = matches[0];
     const currentZoom = map.getZoom();
-    map.flyTo([a.lat, a.lng], Math.max(currentZoom, 14), { duration: 0.8 });
+    map.flyTo([a.lat, a.lng], Math.max(currentZoom, 15), { duration: 0.8 });
   } else if (matches.length > 1) {
     const bounds = L.latLngBounds(matches.map(a => [a.lat, a.lng]));
     map.flyToBounds(bounds, { padding: [60, 60], duration: 0.8, maxZoom: 15 });
@@ -1741,6 +1811,115 @@ function clearMapFilter() {
     el.classList.remove('search-match');
   });
 }
+
+// ============ CATEGORY FILTERS ============
+// Active categories: a set of category IDs that are currently visible on the map.
+// When the set contains all category IDs, the map shows everything (default state).
+const allCategoryIds = categoryConfig.map(c => c.id);
+const activeCategories = new Set(allCategoryIds);
+
+function applyCategoryFilter() {
+  const allActive = activeCategories.size === allCategoryIds.length;
+
+  // Apply visibility to each marker based on its area's category
+  // Using Leaflet's add/remove API rather than CSS hide so the markers truly disappear
+  areas.forEach(area => {
+    const marker = markers[area.id];
+    if (!marker) return;
+    const cat = getAreaCategory(area);
+    const visible = allActive || activeCategories.has(cat);
+    const onMap = map.hasLayer(marker);
+    if (visible && !onMap) {
+      marker.addTo(map);
+    } else if (!visible && onMap) {
+      map.removeLayer(marker);
+    }
+  });
+
+  // Also affect boundary polygons — the 'areas' filter controls them
+  // (only relevant when boundaries are visible)
+  const areasVisible = allActive || activeCategories.has('areas');
+  for (const id in polygonLayers) {
+    const poly = polygonLayers[id];
+    const onMap = map.hasLayer(poly);
+    if (areasVisible && !onMap) {
+      poly.addTo(map);
+    } else if (!areasVisible && onMap) {
+      map.removeLayer(poly);
+    }
+  }
+
+  // Update chip visual states
+  document.querySelectorAll('.filter-chip[data-cat]').forEach(chip => {
+    const cat = chip.dataset.cat;
+    chip.classList.toggle('active', activeCategories.has(cat));
+  });
+  const allChip = document.querySelector('.filter-chip.all-toggle');
+  if (allChip) {
+    allChip.classList.toggle('active', allActive);
+  }
+}
+
+function renderFilterChips() {
+  const container = document.getElementById('category-filters');
+  if (!container) return;
+
+  // Count items in each category (for badge display)
+  const counts = {};
+  areas.forEach(area => {
+    const cat = getAreaCategory(area);
+    counts[cat] = (counts[cat] || 0) + 1;
+  });
+
+  // Build chips: an "All" toggle, then a chip per category that has items
+  let html = `<button class="filter-chip all-toggle active" type="button" title="Toggle all categories">All</button>`;
+
+  categoryConfig.forEach(cfg => {
+    const n = counts[cfg.id];
+    if (!n) return; // skip empty categories
+    html += `
+      <button class="filter-chip active" type="button" data-cat="${cfg.id}" title="${cfg.label}">
+        <span class="chip-icon">${cfg.icon}</span>
+        ${cfg.label}
+        <span class="chip-count">${n}</span>
+      </button>
+    `;
+  });
+
+  container.innerHTML = html;
+
+  // Wire up clicks
+  container.querySelectorAll('.filter-chip[data-cat]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const cat = chip.dataset.cat;
+      if (activeCategories.has(cat)) {
+        activeCategories.delete(cat);
+      } else {
+        activeCategories.add(cat);
+      }
+      applyCategoryFilter();
+    });
+  });
+
+  // "All" chip toggles everything on/off
+  const allChip = container.querySelector('.filter-chip.all-toggle');
+  if (allChip) {
+    allChip.addEventListener('click', () => {
+      const allActive = activeCategories.size === allCategoryIds.length;
+      if (allActive) {
+        // Currently showing everything -> hide everything
+        activeCategories.clear();
+      } else {
+        // Show everything
+        allCategoryIds.forEach(c => activeCategories.add(c));
+      }
+      applyCategoryFilter();
+    });
+  }
+}
+
+// Initialise filter chips after the markers/areas are rendered
+renderFilterChips();
 
 searchInput.addEventListener('input', e => {
   renderSearchResults(e.target.value);
@@ -1961,6 +2140,11 @@ function renderBoundaries() {
     });
 
     polygonLayers[id] = polygon;
+  }
+
+  // Re-apply current category filter so polygons obey the 'areas' filter
+  if (typeof applyCategoryFilter === 'function') {
+    applyCategoryFilter();
   }
 }
 
