@@ -1430,10 +1430,9 @@ const areas = [
   { id: 'lloyds-bank-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Lloyds Bank — Drop/Pickup', note: 'Drop-off and pickup point.', lat: 51.654761, lng: -3.020394 },
   { id: 'morrisons-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Morrisons — Drop/Pickup', note: 'Supermarket drop-off and pickup.', lat: 51.655124, lng: -3.017230 },
   { id: 'coleg-gwent', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Coleg Gwent — Drop/Pickup', note: 'College drop-off and pickup point.', lat: 51.654673, lng: -3.017442 },
-  { id: 'meritor-cwmbran', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Meritor — Drop/Pickup', note: 'Workplace drop-off and pickup point.', lat: 51.651309, lng: -3.018184 },
   { id: 'parkway-staff', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Parkway Hotel — Staff Entrance', note: 'Staff entrance, southern Cwmbran.', lat: 51.632439388647335, lng: -3.017231894378185 },
   { id: 'parkway-main', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Parkway Hotel — Main Entrance', note: 'Main hotel entrance.', lat: 51.63202984138205, lng: -3.017671782410145 },
-  { id: 'crows-nest', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Crow\'s Nest', note: 'Pub, Llanyrafon area.', lat: 51.6454572, lng: -3.0066329 },
+  { id: 'pub-crows-nest', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Crow\'s Nest', note: 'Pub, Llanyrafon area.', lat: 51.6454572, lng: -3.0066329 },
   { id: 'llanyrafon-social', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llanyrafon Social Club', note: 'Social club in Llanyrafon.', lat: 51.646523, lng: -3.009376 },
   { id: 'llanyrafon-skatepark', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Llanyrafon Skatepark', note: 'Skatepark in Llanyrafon.', lat: 51.646700, lng: -3.011348 },
   { id: 'cwmbran-train-station', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Train Station', note: 'Mainline rail station for Cwmbran.', lat: 51.65716039303069, lng: -3.0161606966385817 },
@@ -1441,7 +1440,7 @@ const areas = [
   // PONTYPOOL LANDMARKS
   { id: 'pontypool-station-old', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool & New Inn Station — Old Entrance', note: 'Original entrance to the rail station.', lat: 51.696892, lng: -3.013686 },
   { id: 'pontypool-station-new', town: 'pontypool', group: 'pontypool-landmarks', name: 'Pontypool & New Inn Station — New Entrance', note: 'New entrance to the rail station.', lat: 51.69770221678581, lng: -3.013481255740125 },
-  { id: 'panteg-cemetery', town: 'pontypool', group: 'pontypool-landmarks', name: 'Panteg Cemetery — Entrance', note: 'Cemetery entrance, New Inn.', lat: 51.697957, lng: -3.020638 },
+  { id: 'cemetery-panteg', town: 'pontypool', group: 'pontypool-landmarks', name: 'Panteg Cemetery — Entrance', note: 'Cemetery entrance, New Inn.', lat: 51.697957, lng: -3.020638 },
   { id: 'rowan-ward', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — Rowan Ward', note: 'Rowan Ward, Griffithstown.', lat: 51.690755, lng: -3.025321 },
   { id: 'county-hospital-main', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — Main Entrance', note: 'Main entrance, Griffithstown.', lat: 51.68967003915936, lng: -3.0260609794915236 },
   { id: 'county-hospital-2nd', town: 'pontypool', group: 'pontypool-landmarks', name: 'County Hospital — 2nd Entrance', note: 'Second entrance, Griffithstown.', lat: 51.693425, lng: -3.028282 },
@@ -1783,6 +1782,8 @@ function getAreaCategory(area) {
   if (id.startsWith('food-')) return 'food';
   if (id.startsWith('entertainment-')) return 'entertainment';
   if (id.startsWith('bank-')) return 'banks';
+  if (id.startsWith('cemetery-')) return 'cemeteries';
+  if (id.startsWith('station-')) return 'stations';
 
   // Fallback: text-based matching for pins that don't follow the id-prefix convention
   // (older pins added before we standardised the prefixes)
@@ -1804,7 +1805,7 @@ function getAreaCategory(area) {
   if (/cinema|\bvue\b|odeon|\bgym\b/.test(text)) return 'entertainment';
   if (/\bcollege\b|\bschool\b|\bcoleg\b|primary|comprehensive|\bysgol\b/.test(text)) return 'education';
   if (/\bbank\b|lloyds|barclays|hsbc|natwest/.test(text)) return 'banks';
-  if (/cemetery/.test(text)) return 'other';
+  if (/cemetery/.test(text)) return 'cemeteries';
   if (/skatepark|\bfarm\b|\bpark\b/.test(text)) return 'parks';
   if (/\(pub\)|\(bar\)|wetherspoon|open hearth|crow.s nest|\binn\b|oddfellow|bush inn/.test(text)) return 'pubs';
   if (/\(club\)|workmen|social club|sports & social/.test(text)) return 'clubs';
@@ -1890,6 +1891,7 @@ const categoryConfig = [
   { id: 'entertainment', label: 'Entertainment & Gyms', icon: '★' },
   { id: 'parks',         label: 'Parks & Recreation', icon: '♣' },
   { id: 'civic',         label: 'Civic & Council',    icon: '⌂' },
+  { id: 'cemeteries',    label: 'Cemeteries',         icon: '✜' },
   { id: 'attraction',    label: 'Attractions & Museums', icon: '◈' },
   { id: 'industrial',    label: 'Industrial Estates', icon: '▣' },
   { id: 'pickups',       label: 'Pickup / Drop-off Points', icon: '⊕' },
