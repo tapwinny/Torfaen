@@ -1743,6 +1743,21 @@ function activateArea(id, openPopup = true, scrollToMap = false) {
   const area = areas.find(a => a.id === id);
   if (!area) return;
 
+  // Force-show the activated marker even if filters had hidden it.
+  // (When the user explicitly clicks something, they want to see it — filters shouldn't block that.)
+  const marker = markers[id];
+  if (marker && !map.hasLayer(marker)) {
+    marker.addTo(map);
+  }
+  // If this is a residential area with a boundary polygon, force-show that too
+  // (only matters if boundaries are currently enabled)
+  if (boundariesVisible && polygonLayers[id]) {
+    const poly = polygonLayers[id];
+    if (!map.hasLayer(poly)) poly.addTo(map);
+    const label = boundaryLabels[id];
+    if (label && !map.hasLayer(label)) label.addTo(map);
+  }
+
   // Highlight list item.
   // We only scroll the list item into view if the user explicitly came from the list
   // (scrollToMap=true means they clicked in the list, so we're sending them back UP to the map,
