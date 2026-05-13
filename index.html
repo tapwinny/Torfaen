@@ -2383,6 +2383,10 @@ const stepCurrent = document.getElementById('step-current');
 const stepTotal   = document.getElementById('step-total');
 let stepList = [];
 let stepIndex = 0;
+// Tracks whether the current stepIndex corresponds to a pin that's actually been activated.
+// When filters change, this resets to false — so the next ▶ click jumps to position 1
+// instead of position 2 (i.e. the user expects "show me #1" not "advance from #1 to #2").
+let stepActivated = false;
 
 function rebuildStepList() {
   // Collect every area that's currently visible on the map.
@@ -2393,8 +2397,9 @@ function rebuildStepList() {
       return m && map.hasLayer(m);
     })
     .sort((a, b) => b.lat - a.lat);
-  // Reset index if it's now out of range
-  if (stepIndex >= stepList.length) stepIndex = 0;
+  // Reset position when the visible set changes
+  stepIndex = 0;
+  stepActivated = false;
   updateStepNavUI();
 }
 
@@ -2414,7 +2419,26 @@ function stepTo(newIndex) {
   stepIndex = ((newIndex % stepList.length) + stepList.length) % stepList.length;
   const area = stepList[stepIndex];
   activateArea(area.id, true, false);
+  stepActivated = true;
   updateStepNavUI();
+}
+
+// Next/prev wrappers: if the user hasn't activated anything yet in the current filter,
+// "next" jumps to position 1 instead of position 2. Same for "prev" → goes to last (wrap).
+function stepNextClick() {
+  if (!stepActivated) {
+    stepTo(0);  // First click goes to #1
+  } else {
+    stepTo(stepIndex + 1);
+  }
+}
+
+function stepPrevClick() {
+  if (!stepActivated) {
+    stepTo(stepList.length - 1);  // First click of ◀ goes to last item (wrap)
+  } else {
+    stepTo(stepIndex - 1);
+  }
 }
 
 // Find the given area in the step list and update the counter to match.
@@ -2423,12 +2447,13 @@ function syncStepIndex(id) {
   const idx = stepList.findIndex(a => a.id === id);
   if (idx >= 0) {
     stepIndex = idx;
+    stepActivated = true;
     updateStepNavUI();
   }
 }
 
-stepPrev.addEventListener('click', () => stepTo(stepIndex - 1));
-stepNext.addEventListener('click', () => stepTo(stepIndex + 1));
+stepPrev.addEventListener('click', stepPrevClick);
+stepNext.addEventListener('click', stepNextClick);
 
 // Rebuild the step list whenever filters change. Hook into applyCategoryFilter.
 // (Wrap the existing applyCategoryFilter so we don't have to thread rebuilds through every call site.)
