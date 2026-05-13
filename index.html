@@ -1393,14 +1393,14 @@ const map = L.map('map', {
 }).setView([51.70, -3.05], 11);
 
 // Enable scroll-zoom on hover, disable when mouse leaves the map
-const mapEl = document.getElementById('map');
-mapEl.addEventListener('mouseenter', () => {
+const hoverMapEl = document.getElementById('map');
+hoverMapEl.addEventListener('mouseenter', () => {
   map.scrollWheelZoom.enable();
-  mapEl.classList.add('map-active');
+  hoverMapEl.classList.add('map-active');
 });
-mapEl.addEventListener('mouseleave', () => {
+hoverMapEl.addEventListener('mouseleave', () => {
   map.scrollWheelZoom.disable();
-  mapEl.classList.remove('map-active');
+  hoverMapEl.classList.remove('map-active');
 });
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1408,14 +1408,26 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 18,
 }).addTo(map);
 
-// Recalculate map size once the layout has settled and on window resize.
-// This is important because the map height is now relative to viewport (75vh),
-// so its actual pixel size depends on the resolved window dimensions.
-setTimeout(() => map.invalidateSize(), 200);
+// Recalculate map size whenever the layout might have changed.
+// The map height uses 75vh, so its actual size depends on resolved viewport dimensions.
+// Multiple safety nets:
+// 1. After first paint (rAF)
+// 2. Short delay (100ms)
+// 3. Longer delay (500ms) — covers slow font/CSS loads
+// 4. Window load event — after EVERYTHING (images, fonts) finishes loading
+// 5. On any window resize
+function refreshMapSize() {
+  try { map.invalidateSize(); } catch(e) { console.warn('map refresh failed', e); }
+}
+
+requestAnimationFrame(() => refreshMapSize());
+setTimeout(refreshMapSize, 100);
+setTimeout(refreshMapSize, 500);
+setTimeout(refreshMapSize, 1500);
+window.addEventListener('load', refreshMapSize);
 window.addEventListener('resize', () => {
-  // Throttle resize handling
   clearTimeout(window._mapResizeTimer);
-  window._mapResizeTimer = setTimeout(() => map.invalidateSize(), 150);
+  window._mapResizeTimer = setTimeout(refreshMapSize, 150);
 });
 
 const markers = {};
