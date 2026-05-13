@@ -153,6 +153,7 @@ body {
 .map-section {
   border: 1px solid var(--line-bright);
   background: var(--paper);
+  position: relative;
   box-shadow:
     4px 4px 0 var(--line),
     0 0 30px rgba(168, 85, 247, 0.15);
@@ -675,6 +676,78 @@ body {
   }
 }
 
+/* ====== STEP NAVIGATOR (cycles through filtered pins) ====== */
+.step-nav {
+  display: none;  /* shown only when there's something to navigate */
+  align-items: center;
+  gap: 0;
+  background: var(--paper-light);
+  border-top: 1px solid var(--line-bright);
+  border-bottom: 1px solid var(--line-bright);
+  font-family: 'JetBrains Mono', monospace;
+  padding: 0;
+  justify-content: center;
+}
+
+.step-nav.visible {
+  display: flex;
+}
+
+.step-nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--gold);
+  font-size: 18px;
+  font-weight: 700;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.step-nav-btn:hover {
+  background: linear-gradient(135deg, var(--rust-dark) 0%, var(--rust) 100%);
+  color: var(--ink);
+}
+
+.step-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.step-nav-btn:disabled:hover {
+  background: transparent;
+  color: var(--gold);
+}
+
+.step-nav-counter {
+  color: var(--ink);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 0 12px;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  min-width: 70px;
+  text-align: center;
+  user-select: none;
+}
+
+.step-nav-counter .step-current {
+  color: var(--rust);
+  font-weight: 700;
+}
+
+.step-nav-label {
+  color: var(--ink-soft);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 10px;
+  border-right: 1px solid var(--line);
+  user-select: none;
+}
+
 .map-legend {
   padding: 12px 20px;
   border-top: 1px solid var(--line-bright);
@@ -1120,6 +1193,12 @@ footer {
       <div id="search-results" class="search-results"></div>
       <div id="category-filters" class="category-filters"></div>
       <div id="map"></div>
+      <div id="step-nav" class="step-nav" role="navigation" aria-label="Step through filtered pins">
+        <span class="step-nav-label">Step:</span>
+        <button id="step-prev" class="step-nav-btn" type="button" aria-label="Previous">◀</button>
+        <span class="step-nav-counter"><span id="step-current" class="step-current">0</span> / <span id="step-total">0</span></span>
+        <button id="step-next" class="step-nav-btn" type="button" aria-label="Next">▶</button>
+      </div>
       <div class="edit-panel">
         <div class="edit-controls">
           <button id="boundaries-toggle" type="button" class="edit-btn">⬡ Show boundaries</button>
@@ -2288,6 +2367,63 @@ function renderFilterChips() {
 
 // Initialise filter chips after the markers/areas are rendered
 renderFilterChips();
+
+// ============ STEP NAVIGATOR (cycle through filtered pins) ============
+// Walks through whichever pins are currently visible on the map, ordered north-to-south.
+const stepNav    = document.getElementById('step-nav');
+const stepPrev   = document.getElementById('step-prev');
+const stepNext   = document.getElementById('step-next');
+const stepCurrent = document.getElementById('step-current');
+const stepTotal   = document.getElementById('step-total');
+let stepList = [];
+let stepIndex = 0;
+
+function rebuildStepList() {
+  // Collect every area that's currently visible on the map.
+  // Sort by latitude descending (north-to-south) so the walk feels geographic.
+  stepList = areas
+    .filter(a => {
+      const m = markers[a.id];
+      return m && map.hasLayer(m);
+    })
+    .sort((a, b) => b.lat - a.lat);
+  // Reset index if it's now out of range
+  if (stepIndex >= stepList.length) stepIndex = 0;
+  updateStepNavUI();
+}
+
+function updateStepNavUI() {
+  if (stepList.length === 0) {
+    stepNav.classList.remove('visible');
+    return;
+  }
+  stepNav.classList.add('visible');
+  stepCurrent.textContent = stepIndex + 1;
+  stepTotal.textContent = stepList.length;
+}
+
+function stepTo(newIndex) {
+  if (stepList.length === 0) return;
+  // Wrap around at both ends — continuous study loop
+  stepIndex = ((newIndex % stepList.length) + stepList.length) % stepList.length;
+  const area = stepList[stepIndex];
+  activateArea(area.id, true, false);
+  updateStepNavUI();
+}
+
+stepPrev.addEventListener('click', () => stepTo(stepIndex - 1));
+stepNext.addEventListener('click', () => stepTo(stepIndex + 1));
+
+// Rebuild the step list whenever filters change. Hook into applyCategoryFilter.
+// (Wrap the existing applyCategoryFilter so we don't have to thread rebuilds through every call site.)
+const _origApplyCategoryFilter = applyCategoryFilter;
+applyCategoryFilter = function() {
+  _origApplyCategoryFilter();
+  rebuildStepList();
+};
+
+// Initial build
+rebuildStepList();
 
 searchInput.addEventListener('input', e => {
   renderSearchResults(e.target.value);
