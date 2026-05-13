@@ -499,12 +499,28 @@ body {
 /* ====== CATEGORY FILTERS ====== */
 .category-filters {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
   padding: 12px 16px;
   background: var(--paper-light);
   border-bottom: 1px solid var(--line-bright);
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   align-items: center;
+}
+
+.filter-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: 0.75;
+  margin-right: 4px;
 }
 
 .filter-chip {
@@ -563,6 +579,23 @@ body {
   background: linear-gradient(135deg, #5a3d6e 0%, var(--moss) 100%);
   color: var(--ink);
   border-color: var(--moss);
+}
+
+/* Town chips: use the town's own colour when active so users can spot which town quickly */
+.filter-chip-town.town-blaenavon.active {
+  background: linear-gradient(135deg, #be1287 0%, #ff3eb8 100%);
+  border-color: #ff3eb8;
+  box-shadow: 0 0 8px rgba(255, 62, 184, 0.5);
+}
+.filter-chip-town.town-pontypool.active {
+  background: linear-gradient(135deg, #c4569d 0%, #ff8acf 100%);
+  border-color: #ff8acf;
+  box-shadow: 0 0 8px rgba(255, 138, 207, 0.5);
+}
+.filter-chip-town.town-cwmbran.active {
+  background: linear-gradient(135deg, #6d2dab 0%, #a855f7 100%);
+  border-color: #a855f7;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
 }
 
 #map::after {
@@ -1817,16 +1850,22 @@ function clearMapFilter() {
 const allCategoryIds = categoryConfig.map(c => c.id);
 const activeCategories = new Set(allCategoryIds);
 
-function applyCategoryFilter() {
-  const allActive = activeCategories.size === allCategoryIds.length;
+// Active towns: similarly, which towns to show. Defaults to all three.
+const allTownIds = ['blaenavon', 'pontypool', 'cwmbran'];
+const activeTowns = new Set(allTownIds);
 
-  // Apply visibility to each marker based on its area's category
-  // Using Leaflet's add/remove API rather than CSS hide so the markers truly disappear
+function applyCategoryFilter() {
+  const allCatsActive = activeCategories.size === allCategoryIds.length;
+  const allTownsActive = activeTowns.size === allTownIds.length;
+
+  // Apply visibility to each marker — area must match BOTH category AND town filters
   areas.forEach(area => {
     const marker = markers[area.id];
     if (!marker) return;
     const cat = getAreaCategory(area);
-    const visible = allActive || activeCategories.has(cat);
+    const catVisible = allCatsActive || activeCategories.has(cat);
+    const townVisible = allTownsActive || activeTowns.has(area.town);
+    const visible = catVisible && townVisible;
     const onMap = map.hasLayer(marker);
     if (visible && !onMap) {
       marker.addTo(map);
@@ -1835,15 +1874,17 @@ function applyCategoryFilter() {
     }
   });
 
-  // Also affect boundary polygons — the 'areas' filter controls them
-  // (only relevant when boundaries are visible)
-  const areasVisible = allActive || activeCategories.has('areas');
+  // Boundary polygons — the 'areas' category filter + town filter both apply
+  const areasFilterActive = allCatsActive || activeCategories.has('areas');
   for (const id in polygonLayers) {
     const poly = polygonLayers[id];
+    const area = areas.find(a => a.id === id);
+    const townVisible = !area || allTownsActive || activeTowns.has(area.town);
+    const visible = areasFilterActive && townVisible;
     const onMap = map.hasLayer(poly);
-    if (areasVisible && !onMap) {
+    if (visible && !onMap) {
       poly.addTo(map);
-    } else if (!areasVisible && onMap) {
+    } else if (!visible && onMap) {
       map.removeLayer(poly);
     }
   }
@@ -1853,9 +1894,13 @@ function applyCategoryFilter() {
     const cat = chip.dataset.cat;
     chip.classList.toggle('active', activeCategories.has(cat));
   });
+  document.querySelectorAll('.filter-chip[data-town]').forEach(chip => {
+    const t = chip.dataset.town;
+    chip.classList.toggle('active', activeTowns.has(t));
+  });
   const allChip = document.querySelector('.filter-chip.all-toggle');
   if (allChip) {
-    allChip.classList.toggle('active', allActive);
+    allChip.classList.toggle('active', allCatsActive && allTownsActive);
   }
 }
 
@@ -1864,18 +1909,45 @@ function renderFilterChips() {
   if (!container) return;
 
   // Count items in each category (for badge display)
-  const counts = {};
+  const catCounts = {};
+  const townCounts = {};
   areas.forEach(area => {
     const cat = getAreaCategory(area);
-    counts[cat] = (counts[cat] || 0) + 1;
+    catCounts[cat] = (catCounts[cat] || 0) + 1;
+    townCounts[area.town] = (townCounts[area.town] || 0) + 1;
   });
 
-  // Build chips: an "All" toggle, then a chip per category that has items
-  let html = `<button class="filter-chip all-toggle active" type="button" title="Toggle all categories">All</button>`;
+  // Town config
+  const townConfig = [
+    { id: 'blaenavon', label: 'Blaenavon', icon: '◇' },
+    { id: 'pontypool', label: 'Pontypool', icon: '◇' },
+    { id: 'cwmbran',   label: 'Cwmbran',   icon: '◇' },
+  ];
 
+  let html = '';
+
+  // Row 1: All toggle + towns
+  html += `<div class="filter-row">`;
+  html += `<button class="filter-chip all-toggle active" type="button" title="Toggle every filter">All</button>`;
+  html += `<span class="filter-label">Towns:</span>`;
+  townConfig.forEach(t => {
+    const n = townCounts[t.id] || 0;
+    html += `
+      <button class="filter-chip filter-chip-town town-${t.id} active" type="button" data-town="${t.id}" title="Show ${t.label} only">
+        <span class="chip-icon">${t.icon}</span>
+        ${t.label}
+        <span class="chip-count">${n}</span>
+      </button>
+    `;
+  });
+  html += `</div>`;
+
+  // Row 2: categories
+  html += `<div class="filter-row">`;
+  html += `<span class="filter-label">Type:</span>`;
   categoryConfig.forEach(cfg => {
-    const n = counts[cfg.id];
-    if (!n) return; // skip empty categories
+    const n = catCounts[cfg.id];
+    if (!n) return;
     html += `
       <button class="filter-chip active" type="button" data-cat="${cfg.id}" title="${cfg.label}">
         <span class="chip-icon">${cfg.icon}</span>
@@ -1884,10 +1956,11 @@ function renderFilterChips() {
       </button>
     `;
   });
+  html += `</div>`;
 
   container.innerHTML = html;
 
-  // Wire up clicks
+  // Wire up category clicks
   container.querySelectorAll('.filter-chip[data-cat]').forEach(chip => {
     chip.addEventListener('click', () => {
       const cat = chip.dataset.cat;
@@ -1900,17 +1973,34 @@ function renderFilterChips() {
     });
   });
 
+  // Wire up town clicks
+  container.querySelectorAll('.filter-chip[data-town]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const t = chip.dataset.town;
+      if (activeTowns.has(t)) {
+        activeTowns.delete(t);
+      } else {
+        activeTowns.add(t);
+      }
+      applyCategoryFilter();
+    });
+  });
+
   // "All" chip toggles everything on/off
   const allChip = container.querySelector('.filter-chip.all-toggle');
   if (allChip) {
     allChip.addEventListener('click', () => {
-      const allActive = activeCategories.size === allCategoryIds.length;
+      const allActive =
+        activeCategories.size === allCategoryIds.length &&
+        activeTowns.size === allTownIds.length;
       if (allActive) {
         // Currently showing everything -> hide everything
         activeCategories.clear();
+        activeTowns.clear();
       } else {
         // Show everything
         allCategoryIds.forEach(c => activeCategories.add(c));
+        allTownIds.forEach(t => activeTowns.add(t));
       }
       applyCategoryFilter();
     });
@@ -2119,12 +2209,23 @@ function renderBoundaries() {
     const color = getBoundaryColor(id);
     const polygon = L.polygon(coords, {
       color: color,
-      weight: 2,
-      opacity: 0.85,
+      weight: 3,
+      opacity: 1,
       fillColor: color,
-      fillOpacity: 0.18,
-      interactive: true
+      fillOpacity: 0.08,
+      interactive: true,
+      lineJoin: 'round',
+      lineCap: 'round'
     }).addTo(map);
+
+    // Hover effect: thicken outline and brighten fill so the hovered area pops out
+    polygon.on('mouseover', () => {
+      polygon.setStyle({ weight: 4.5, fillOpacity: 0.28 });
+      polygon.bringToFront();
+    });
+    polygon.on('mouseout', () => {
+      polygon.setStyle({ weight: 3, fillOpacity: 0.08 });
+    });
 
     // Label binding — show name on hover
     polygon.bindTooltip(area.name, {
