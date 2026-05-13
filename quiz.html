@@ -447,6 +447,51 @@ button.btn.ghost {
   font-family: 'Inter', sans-serif;
 }
 
+/* ====== FLOATING NEXT BUTTON ON MAP ====== */
+.map-with-overlay {
+  position: relative;
+}
+
+.map-next-btn {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: 500;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--rust-dark) 0%, var(--rust) 100%);
+  color: var(--ink);
+  border: 1px solid var(--rust);
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(217, 70, 239, 0.55), 0 4px 16px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.2s ease;
+}
+
+.map-next-btn.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+  /* Pulse to draw the eye */
+  animation: next-btn-pulse 2s ease-in-out infinite;
+}
+
+.map-next-btn:hover {
+  box-shadow: 0 0 32px rgba(217, 70, 239, 0.8), 0 6px 20px rgba(0, 0, 0, 0.5);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+@keyframes next-btn-pulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(217, 70, 239, 0.55), 0 4px 16px rgba(0, 0, 0, 0.5); }
+  50%      { box-shadow: 0 0 36px rgba(217, 70, 239, 0.85), 0 4px 16px rgba(0, 0, 0, 0.5); }
+}
+
 /* ====== DROP-OFF MODE ====== */
 #dropoff-map {
   height: 60vh;
@@ -814,13 +859,19 @@ button.btn.ghost {
     <!-- AREAS MODE: map for tapping -->
     <div id="q-map-mode">
       <div class="map-hint">Tap the map to place a pin. Drag it to fine-tune, then click <strong>Confirm placement</strong>.</div>
-      <div id="quiz-map"></div>
+      <div class="map-with-overlay">
+        <div id="quiz-map"></div>
+        <button class="map-next-btn" id="btn-next-on-areas-map" type="button">Next question →</button>
+      </div>
     </div>
 
     <!-- DROP-OFF MODE: drive a route, drop the passenger -->
     <div id="q-dropoff-mode" style="display: none;">
       <div class="map-hint" id="dropoff-hint">Pick-up in <strong style="color: var(--gold);">pink</strong>. <strong>Left-click</strong> drags to draw. <strong>Right-click</strong> or <strong>hold Space</strong> drags to pan. On mobile: <strong>1 finger draws, 2 fingers pan</strong>. Aim within 50m.</div>
-      <div id="dropoff-map"></div>
+      <div class="map-with-overlay">
+        <div id="dropoff-map"></div>
+        <button class="map-next-btn" id="btn-next-on-dropoff-map" type="button">Next question →</button>
+      </div>
       <div class="dropoff-controls">
         <button class="btn ghost" id="btn-undo-stroke" type="button" disabled>↶ Undo last</button>
         <button class="btn ghost" id="btn-clear-route" type="button">⟲ Clear route</button>
@@ -1715,10 +1766,32 @@ function updateScoreUI() {
 function showNextButton() {
   document.getElementById('btn-next').style.display = 'inline-block';
   document.getElementById('btn-skip').style.display = 'none';
+  // Show the floating Next button on whichever map is active
+  if (currentMode === 'areas') {
+    document.getElementById('btn-next-on-areas-map').classList.add('visible');
+  } else if (currentMode === 'dropoff') {
+    document.getElementById('btn-next-on-dropoff-map').classList.add('visible');
+  }
   // Scroll the feedback area into view so the user sees the result
   const fb = document.getElementById('q-feedback');
   if (fb) fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+// Hide the floating Next buttons (called when starting a new question)
+function hideMapNextButtons() {
+  const a = document.getElementById('btn-next-on-areas-map');
+  const d = document.getElementById('btn-next-on-dropoff-map');
+  if (a) a.classList.remove('visible');
+  if (d) d.classList.remove('visible');
+}
+
+// Both floating Next buttons just trigger the regular Next button
+document.getElementById('btn-next-on-areas-map').addEventListener('click', () => {
+  document.getElementById('btn-next').click();
+});
+document.getElementById('btn-next-on-dropoff-map').addEventListener('click', () => {
+  document.getElementById('btn-next').click();
+});
 
 // =============== RENDER A QUESTION ===============
 function renderQuestion() {
@@ -1729,6 +1802,9 @@ function renderQuestion() {
   document.getElementById('q-feedback').classList.remove('visible');
   document.getElementById('btn-next').style.display = 'none';
   document.getElementById('btn-skip').style.display = 'inline-block';
+
+  // Hide the floating Next buttons (they appear after answering, hidden here for new question)
+  hideMapNextButtons();
 
   // Manage the Confirm buttons: each mode has its own
   const confirmGuessBtn = document.getElementById('btn-confirm-guess');
