@@ -1764,29 +1764,51 @@ function getAreaCategory(area) {
   const isLandmark = area.group && area.group.includes('landmarks');
   if (!isLandmark) return 'areas';
 
+  // Use id-prefix routing first when available — this is the most reliable signal,
+  // since names and notes contain misleading words ('Station Road', 'Gymraeg', 'New Inn Primary').
+  const id = area.id || '';
+  if (id.startsWith('school-')) return 'education';
+  if (id.startsWith('pub-')) return 'pubs';
+  if (id.startsWith('club-')) return 'clubs';
+  if (id.startsWith('shop-')) return 'shops';
+  if (id.startsWith('gp-')) return 'medical';
+  if (id.startsWith('care-')) return 'care';
+  if (id.startsWith('petrol-')) return 'petrol';
+  if (id.startsWith('industrial-')) return 'industrial';
+  if (id.startsWith('emergency-')) return 'emergency';
+  if (id.startsWith('civic-')) return 'civic';
+  if (id.startsWith('attraction-')) return 'attraction';
+  if (id.startsWith('park-')) return 'parks';
+  if (id.startsWith('hotel-')) return 'hotels';
+  if (id.startsWith('food-')) return 'food';
+  if (id.startsWith('entertainment-')) return 'entertainment';
+  if (id.startsWith('bank-')) return 'banks';
+
+  // Fallback: text-based matching for pins that don't follow the id-prefix convention
+  // (older pins added before we standardised the prefixes)
   const text = (area.name + ' ' + area.note).toLowerCase();
 
   // Order matters: more specific matches first
-  if (/petrol|forecourt|esso|texaco|bp |shell /.test(text)) return 'petrol';
-  if (/hospital|a&e|ward|surgery|medical centre|health centre|gp /.test(text)) return 'medical';
+  if (/petrol|forecourt|esso|texaco|\bbp\b|\bshell\b/.test(text)) return 'petrol';
+  if (/hospital|a&e|\bward\b|surgery|medical centre|health centre|\bgp\b/.test(text)) return 'medical';
   if (/care home|nursing home|residential home|residential care/.test(text)) return 'care';
   if (/police|fire station|fire & rescue|ambulance/.test(text)) return 'emergency';
   if (/industrial estate|business park/.test(text)) return 'industrial';
   if (/council|civic|market hall|town hall|library|community complex/.test(text) ||
       /\bmarket\b/.test(text)) return 'civic';
   if (/museum|ironworks|big pit|heritage site/.test(text)) return 'attraction';
-  if (/\bstation\b|train|rail/.test(text)) return 'stations';
+  if (/train station|rail station|railway/.test(text)) return 'stations';
   if (/aldi|asda|morrisons|primark|tesco|sainsbury|lidl|supermarket|one stop|spar|premier grocery/.test(text)) return 'shops';
-  if (/hotel|premier inn|best western|parkway/.test(text)) return 'hotels';
+  if (/hotel|premier inn|best western|parkway hotel/.test(text)) return 'hotels';
   if (/mcdonald|harvester|restaurant|kfc|burger king|nando/.test(text)) return 'food';
-  if (/cinema|vue|odeon|gym/.test(text)) return 'entertainment';
-  if (/college|school|coleg/.test(text)) return 'education';
-  if (/bank|lloyds|barclays|hsbc|natwest/.test(text)) return 'banks';
+  if (/cinema|\bvue\b|odeon|\bgym\b/.test(text)) return 'entertainment';
+  if (/\bcollege\b|\bschool\b|\bcoleg\b|primary|comprehensive|\bysgol\b/.test(text)) return 'education';
+  if (/\bbank\b|lloyds|barclays|hsbc|natwest/.test(text)) return 'banks';
   if (/cemetery/.test(text)) return 'other';
-  if (/skatepark|farm|park\b/.test(text)) return 'parks';
+  if (/skatepark|\bfarm\b|\bpark\b/.test(text)) return 'parks';
   if (/\(pub\)|\(bar\)|wetherspoon|open hearth|crow.s nest|\binn\b|oddfellow|bush inn/.test(text)) return 'pubs';
   if (/\(club\)|workmen|social club|sports & social/.test(text)) return 'clubs';
-  if (/pickup|drop|drop\/pickup/.test(text)) return 'pickups';
+  if (/pickup|drop\/pickup|drop-off/.test(text)) return 'pickups';
   if (/meritor/.test(text)) return 'pickups';
 
   return 'other';
@@ -2518,6 +2540,9 @@ let stepIndex = 0;
 let stepActivated = false;
 
 function rebuildStepList() {
+  // Remember what the list looked like BEFORE the rebuild, so we can detect a meaningful change.
+  const prevIds = stepList.map(a => a.id).join(',');
+
   // Collect every area that's currently visible on the map.
   // Sort by latitude descending (north-to-south) so the walk feels geographic.
   stepList = areas
@@ -2526,10 +2551,49 @@ function rebuildStepList() {
       return m && map.hasLayer(m);
     })
     .sort((a, b) => b.lat - a.lat);
+
+  const newIds = stepList.map(a => a.id).join(',');
+  const listChanged = prevIds !== newIds;
+
   // Reset position when the visible set changes
   stepIndex = 0;
   stepActivated = false;
   updateStepNavUI();
+
+  // If the list of visible pins actually changed (i.e. the filter was meaningfully modified),
+  // we want a clean slate: clear any stale highlight from the previous filter context,
+  // close the popup, deactivate the previous active pin.
+  if (listChanged) {
+    clearActivation();
+
+    // Then, if there's now a "narrow" filtered set (not just "everything"),
+    // auto-activate the first item to give immediate visual feedback that the filter worked,
+    // matching the highlight-polygon-and-fly behaviour as if the user had clicked the first arrow.
+    const everythingShown = stepList.length === areas.length;
+    if (!everythingShown && stepList.length > 0) {
+      // Defer slightly so the filter UI updates first, then we activate
+      requestAnimationFrame(() => stepTo(0));
+    }
+  }
+}
+
+// Clear all activation state: highlighted pin, area banner, solo polygon, suppressed labels
+function clearActivation() {
+  activeId = null;
+  document.querySelectorAll('.area-item.active').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.custom-marker.active').forEach(el => el.classList.remove('active'));
+  map.closePopup();
+  // Clear solo polygon highlight
+  if (soloHighlightPolygon) {
+    map.removeLayer(soloHighlightPolygon);
+    soloHighlightPolygon = null;
+  }
+  if (soloHighlightLabel) {
+    map.removeLayer(soloHighlightLabel);
+    soloHighlightLabel = null;
+  }
+  // Clear banner + restore any suppressed polygon labels
+  updateAreaBanner(null);
 }
 
 function updateStepNavUI() {
