@@ -2023,26 +2023,21 @@ boundariesEdit.addEventListener('click', () => {
   }
 });
 
-// Patch updateButtonStates to also account for boundary edits
-const _originalUpdate = updateButtonStates;
-updateButtonStates = function() {
-  const hasEdits = Object.keys(edits).length > 0 || Object.keys(boundaryEdits).length > 0;
-  editExport.disabled = !hasEdits;
-  editReset.disabled = !hasEdits;
-};
-
-// Patch the export function: also write updated boundaries back to file
-const _originalExportClick = editExport.onclick;
-editExport.addEventListener('click', () => {
-  // The original handler does the pin patching; we need to additionally patch boundaries
-  // We listen AFTER the original by using a small delay — but cleaner: replace it entirely
-}, { once: false });
-
 // Replace export logic with combined pin + boundary patcher
 editExport.onclick = null;
 // Remove all prior listeners by cloning the button
 const newExport = editExport.cloneNode(true);
 editExport.parentNode.replaceChild(newExport, editExport);
+
+// Patch updateButtonStates to also account for boundary edits AND target the live (cloned) button
+updateButtonStates = function() {
+  const hasEdits = Object.keys(edits).length > 0 || Object.keys(boundaryEdits).length > 0;
+  newExport.disabled = !hasEdits;
+  editReset.disabled = !hasEdits;
+};
+
+// Run it once immediately to sync the button state with current edits
+updateButtonStates();
 
 newExport.addEventListener('click', () => {
   const pinEdits = Object.entries(edits);
