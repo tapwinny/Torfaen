@@ -541,6 +541,12 @@ body {
   transform: translateY(-1px);
 }
 
+.search-results-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .search-result-item {
   padding: 9px 16px;
   cursor: pointer;
@@ -2112,14 +2118,20 @@ function renderSearchResults(query) {
   }
 
   // "Show only these on map" — appears whenever 2+ pins matched the search.
-  // Clicking it locks those pins as the visible set, regardless of category, and
-  // hides everything else. Avoids the user having to hunt through filter chips.
+  // When a pin-lock is already active (user has previously filtered), also offer
+  // "Add to current selection" so they can stack searches: pubs, then hospitals, etc.
   const showShortcut = matches.length >= 2;
+  const lockActive = pinLockIds !== null;
 
   let headerHtml = `<div class="search-results-header">
     <span class="search-results-count">${matches.length} match${matches.length === 1 ? '' : 'es'}</span>`;
   if (showShortcut) {
-    headerHtml += `<button class="search-results-action" id="search-show-only" type="button">Show only these on map →</button>`;
+    headerHtml += `<div class="search-results-actions">`;
+    if (lockActive) {
+      headerHtml += `<button class="search-results-action" id="search-add-to-lock" type="button">+ Add to current selection</button>`;
+    }
+    headerHtml += `<button class="search-results-action" id="search-show-only" type="button">Show only these →</button>`;
+    headerHtml += `</div>`;
   }
   headerHtml += `</div>`;
 
@@ -2153,6 +2165,15 @@ function renderSearchResults(query) {
     showOnlyBtn.addEventListener('click', e => {
       e.stopPropagation();
       lockMapToPins(matches);
+    });
+  }
+
+  // Wire the "Add to current selection" button (only present when a lock is already active)
+  const addBtn = document.getElementById('search-add-to-lock');
+  if (addBtn) {
+    addBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      addPinsToLock(matches);
     });
   }
 
@@ -2226,6 +2247,32 @@ function lockMapToPins(matches) {
   // Fit the view to those pins
   if (matches.length > 0) {
     const bounds = L.latLngBounds(matches.map(a => [a.lat, a.lng]));
+    map.flyToBounds(bounds, { padding: [60, 60], duration: 0.6, maxZoom: 14 });
+  }
+}
+
+// Append pins to an existing pin-lock — used when the user does a 2nd search
+// and clicks "Add to current selection".
+function addPinsToLock(matches) {
+  if (!pinLockIds) {
+    // Defensive fallback — shouldn't happen since the button only appears when a lock exists
+    lockMapToPins(matches);
+    return;
+  }
+  // Add each new match to the lock and reveal its marker
+  matches.forEach(m => {
+    pinLockIds.add(m.id);
+    const marker = markers[m.id];
+    if (marker && !map.hasLayer(marker)) marker.addTo(map);
+  });
+  // Update count + clear search
+  document.getElementById('pin-lock-count').textContent = pinLockIds.size;
+  searchInput.value = '';
+  renderSearchResults('');
+  // Fit to all the pins currently locked (existing + newly added)
+  const allLockedAreas = areas.filter(a => pinLockIds.has(a.id));
+  if (allLockedAreas.length > 0) {
+    const bounds = L.latLngBounds(allLockedAreas.map(a => [a.lat, a.lng]));
     map.flyToBounds(bounds, { padding: [60, 60], duration: 0.6, maxZoom: 14 });
   }
 }
