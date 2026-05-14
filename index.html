@@ -797,6 +797,60 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
+/* Floating banner shown when a pin-lock is active (after using "Show only these on map"). */
+.pin-lock-banner {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 500;
+  background: rgba(15, 10, 23, 0.95);
+  border: 1px solid var(--rust);
+  box-shadow: 0 0 16px rgba(217, 70, 239, 0.5);
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.pin-lock-banner.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.pin-lock-banner strong {
+  color: var(--gold);
+  font-size: 13px;
+}
+
+.pin-lock-banner button {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  background: var(--rust-dark);
+  color: var(--ink);
+  border: 1px solid var(--rust);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pin-lock-banner button:hover {
+  background: var(--rust);
+  box-shadow: 0 0 10px rgba(217, 70, 239, 0.6);
+}
+
 .area-banner .area-banner-label {
   font-family: 'JetBrains Mono', monospace;
   font-style: normal;
@@ -1355,6 +1409,10 @@ footer {
       <div class="map-wrap">
         <div id="map"></div>
         <div id="area-banner" class="area-banner" role="status" aria-live="polite"></div>
+        <div id="pin-lock-banner" class="pin-lock-banner">
+          <span>Showing only <strong><span id="pin-lock-count">0</span></strong> selected pins</span>
+          <button id="pin-lock-clear" type="button">Show all pins ✕</button>
+        </div>
       </div>
       <div id="step-nav" class="step-nav" role="navigation" aria-label="Step through filtered pins">
         <span class="step-nav-label">Step:</span>
@@ -2053,17 +2111,15 @@ function renderSearchResults(query) {
     return;
   }
 
-  // Detect if all matches share a single category — if so, offer a "Show only these" shortcut.
-  // This is the moment where filter chips would replicate what the user already searched.
-  const matchCategories = [...new Set(matches.map(m => getAreaCategory(m)))];
-  const sharesCategory = matchCategories.length === 1 && matches.length >= 3;
-  const sharedCategoryId = sharesCategory ? matchCategories[0] : null;
-  const sharedCategoryLabel = sharedCategoryId ? (categoryConfig.find(c => c.id === sharedCategoryId)?.label || sharedCategoryId) : '';
+  // "Show only these on map" — appears whenever 2+ pins matched the search.
+  // Clicking it locks those pins as the visible set, regardless of category, and
+  // hides everything else. Avoids the user having to hunt through filter chips.
+  const showShortcut = matches.length >= 2;
 
   let headerHtml = `<div class="search-results-header">
     <span class="search-results-count">${matches.length} match${matches.length === 1 ? '' : 'es'}</span>`;
-  if (sharesCategory) {
-    headerHtml += `<button class="search-results-action" id="search-show-only" type="button">Show only ${sharedCategoryLabel} on map →</button>`;
+  if (showShortcut) {
+    headerHtml += `<button class="search-results-action" id="search-show-only" type="button">Show only these on map →</button>`;
   }
   headerHtml += `</div>`;
 
@@ -2096,18 +2152,7 @@ function renderSearchResults(query) {
   if (showOnlyBtn) {
     showOnlyBtn.addEventListener('click', e => {
       e.stopPropagation();
-      // Set the category filter to just this category, then clear the search
-      activeCategories.clear();
-      activeCategories.add(sharedCategoryId);
-      // Reset town filter to all (so we don't accidentally hide pins by town too)
-      allTownIds.forEach(t => activeTowns.add(t));
-      applyCategoryFilter();
-      // Clear the search itself so the user sees the clean filtered view
-      searchInput.value = '';
-      renderSearchResults('');
-      // Fit view to the now-filtered pins
-      const fitBounds = L.latLngBounds(matches.map(a => [a.lat, a.lng]));
-      map.flyToBounds(fitBounds, { padding: [60, 60], duration: 0.6, maxZoom: 14 });
+      lockMapToPins(matches);
     });
   }
 
@@ -2155,7 +2200,46 @@ const activeCategories = new Set(allCategoryIds);
 const allTownIds = ['blaenavon', 'pontypool', 'cwmbran'];
 const activeTowns = new Set(allTownIds);
 
+// Custom pin-lock — when the user clicks "Show only these on map" from a search,
+// we lock the map to a specific set of pin IDs (regardless of category/town filters).
+// While locked, the category/town filters are inert; the lock takes precedence.
+// `null` means no lock is active.
+let pinLockIds = null;
+
+function lockMapToPins(matches) {
+  pinLockIds = new Set(matches.map(m => m.id));
+  // Iterate every marker — show only locked ones, hide the rest
+  areas.forEach(area => {
+    const marker = markers[area.id];
+    if (!marker) return;
+    const onMap = map.hasLayer(marker);
+    const shouldShow = pinLockIds.has(area.id);
+    if (shouldShow && !onMap) marker.addTo(map);
+    else if (!shouldShow && onMap) map.removeLayer(marker);
+  });
+  // Clear the search bar so the user sees the clean filtered map
+  searchInput.value = '';
+  renderSearchResults('');
+  // Show the floating "Show all pins" reset button
+  document.getElementById('pin-lock-banner').classList.add('visible');
+  document.getElementById('pin-lock-count').textContent = matches.length;
+  // Fit the view to those pins
+  if (matches.length > 0) {
+    const bounds = L.latLngBounds(matches.map(a => [a.lat, a.lng]));
+    map.flyToBounds(bounds, { padding: [60, 60], duration: 0.6, maxZoom: 14 });
+  }
+}
+
+function clearPinLock() {
+  pinLockIds = null;
+  document.getElementById('pin-lock-banner').classList.remove('visible');
+  // Re-apply the normal category/town filters
+  applyCategoryFilter();
+}
+
 function applyCategoryFilter() {
+  // If a pin-lock is active, ignore category/town filters until the user clears it
+  if (pinLockIds) return;
   const allCatsActive = activeCategories.size === allCategoryIds.length;
   const allTownsActive = activeTowns.size === allTownIds.length;
   // Treat an empty town set as "no town filter" (so you can deselect all and then
@@ -2288,6 +2372,7 @@ function renderFilterChips() {
   // Wire up category clicks
   container.querySelectorAll('.filter-chip[data-cat]').forEach(chip => {
     chip.addEventListener('click', () => {
+      if (pinLockIds) clearPinLock();  // touching a filter clears the search-lock
       const cat = chip.dataset.cat;
       if (activeCategories.has(cat)) {
         activeCategories.delete(cat);
@@ -2301,6 +2386,7 @@ function renderFilterChips() {
   // Wire up town clicks
   container.querySelectorAll('.filter-chip[data-town]').forEach(chip => {
     chip.addEventListener('click', () => {
+      if (pinLockIds) clearPinLock();  // touching a filter clears the search-lock
       const t = chip.dataset.town;
       if (activeTowns.has(t)) {
         activeTowns.delete(t);
@@ -2315,6 +2401,7 @@ function renderFilterChips() {
   const allChip = container.querySelector('.filter-chip.all-toggle');
   if (allChip) {
     allChip.addEventListener('click', () => {
+      if (pinLockIds) clearPinLock();
       const allActive =
         activeCategories.size === allCategoryIds.length &&
         activeTowns.size === allTownIds.length;
@@ -2334,6 +2421,11 @@ function renderFilterChips() {
 
 // Initialise filter chips after the markers/areas are rendered
 renderFilterChips();
+
+// Wire the floating "Show all pins" reset button
+document.getElementById('pin-lock-clear').addEventListener('click', () => {
+  clearPinLock();
+});
 
 // ============ STEP NAVIGATOR (cycle through filtered pins) ============
 // Walks through whichever pins are currently visible on the map, ordered north-to-south.
