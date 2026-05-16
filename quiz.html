@@ -1748,6 +1748,7 @@ function handleFindAreasClick(latlng) {
     lbl.textContent = '✓ Found it';
     txt.innerHTML = `<strong>${area.name}</strong> — correct.`;
     document.getElementById('q-right').textContent = findAreasFound;
+    recordItemResult(area.id, area.name, true);
     setTimeout(advanceFindAreas, 700);
   } else {
     findAreasTries++;
@@ -1771,6 +1772,7 @@ function handleFindAreasClick(latlng) {
       lbl.textContent = '✗ Out of tries';
       txt.innerHTML = `That was <strong>${area.name}</strong> — shown in red. Moving on.`;
       document.getElementById('q-wrong').textContent = findAreasMissed;
+      recordItemResult(area.id, area.name, false);
       setTimeout(advanceFindAreas, 1400);
     } else {
       // Still have tries left
