@@ -326,6 +326,32 @@ const areas = [
   { id: 'park-boating-lake', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Boating Lake Car Park', note: 'Boating lake at Llanyrafon, Cwmbran.', lat: 51.640557, lng: -3.004871 },
   { id: 'cemetery-cwmbran-oakfield', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Cwmbran Cemetery — Oakfield', note: 'Cemetery in Oakfield, Cwmbran.', lat: 51.641454, lng: -3.017867 },
   { id: 'civic-veezu-hq', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Veezu HQ — Springvale', note: 'Veezu (taxi company) headquarters, Springvale Industrial Estate, Cwmbran.', lat: 51.655746, lng: -3.032156 },
+
+  // AUTO-ADDED restaurants (Google Places) — id prefix "autofood-" so you can spot/remove these
+  { id: 'autofood-kam-fu', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Kam Fu', note: 'Chinese takeaway, Fairwater, Cwmbran.', lat: 51.6448094, lng: -3.0472312 },
+  { id: 'autofood-oakfield-cantonese', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Oakfield Cantonese', note: 'Chinese takeaway/restaurant, Oakfield, Cwmbran.', lat: 51.6386618, lng: -3.0157256 },
+  { id: 'autofood-china-palace', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'China Palace', note: 'Chinese takeaway, Cwmbran town centre.', lat: 51.6609628, lng: -3.0245324 },
+  { id: 'autofood-wai-wai', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Wai Wai Noodle Bar', note: 'Chinese noodle bar, Cwmbran centre.', lat: 51.6552204, lng: -3.0219749 },
+  { id: 'autofood-chans-noodle', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Chans Noodle Bar', note: 'Chinese noodle bar, Cwmbran centre.', lat: 51.65407, lng: -3.0224797 },
+  { id: 'autofood-kim-kitchen', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Kim Kitchen', note: 'Cantonese takeaway, Edlogan Square, Cwmbran.', lat: 51.6634883, lng: -3.0100487 },
+  { id: 'autofood-hsiang-yang', town: 'pontypool', group: 'pontypool-landmarks', name: 'Hsiang Yang Flower', note: 'Chinese takeaway, Griffithstown, Pontypool.', lat: 51.6865233, lng: -3.025574 },
+  { id: 'autofood-golden-star', town: 'pontypool', group: 'pontypool-landmarks', name: 'Golden Star', note: 'Chinese takeaway, Pontypool town.', lat: 51.7000656, lng: -3.0385502 },
+  { id: 'autofood-lees-kitchen', town: 'pontypool', group: 'pontypool-landmarks', name: 'Lees Kitchen', note: 'Chinese takeaway, Pontypool town.', lat: 51.7025133, lng: -3.0409861 },
+  { id: 'autofood-choice-takeaway', town: 'pontypool', group: 'pontypool-landmarks', name: 'Choice Take Away', note: 'Chinese takeaway, Osborne Rd, Pontypool.', lat: 51.7051659, lng: -3.0436327 },
+  { id: 'autofood-taste-good', town: 'pontypool', group: 'pontypool-landmarks', name: 'Taste Good', note: 'Chinese takeaway, Osborne Rd, Pontypool.', lat: 51.704243, lng: -3.0424187 },
+  { id: 'autofood-treasure-house', town: 'pontypool', group: 'pontypool-landmarks', name: 'Treasure House', note: 'Chinese takeaway, Pontnewynydd, Pontypool.', lat: 51.7114699, lng: -3.0542527 },
+  { id: 'autofood-tandoorz', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Tandoorz', note: 'Indian/kebab takeaway, Fairwater, Cwmbran.', lat: 51.6445066, lng: -3.0475494 },
+  { id: 'autofood-saffron-kitchen', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Saffron Kitchen', note: 'Indian takeaway, Cwmbran town centre.', lat: 51.6610082, lng: -3.0247679 },
+  { id: 'autofood-wok-masala', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Wok Masala', note: 'Indian takeaway, Victoria St, Cwmbran.', lat: 51.6468396, lng: -3.0215425 },
+  { id: 'autofood-balti-king', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Balti King', note: 'Indian restaurant & takeaway, Richmond Rd, Cwmbran.', lat: 51.6617393, lng: -3.0256317 },
+  { id: 'autofood-indian-delights', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'Indian Delights', note: 'Indian takeaway, Fairwater shops, Cwmbran.', lat: 51.6444879, lng: -3.0475539 },
+  { id: 'autofood-shahinoor', town: 'cwmbran', group: 'cwmbran-landmarks', name: 'The Shahinoor Tandoori', note: 'Indian takeaway, Oldbury Rd, Cwmbran.', lat: 51.6455864, lng: -3.0214303 },
+  { id: 'autofood-parbin-tandoori', town: 'pontypool', group: 'pontypool-landmarks', name: 'Parbin Tandoori', note: 'Indian takeaway, Crane St, Pontypool.', lat: 51.7020419, lng: -3.0417343 },
+  { id: 'autofood-aahar', town: 'pontypool', group: 'pontypool-landmarks', name: 'Aahar', note: 'Indian restaurant, New Inn, Pontypool.', lat: 51.6895798, lng: -3.0091736 },
+  { id: 'autofood-shaheen', town: 'pontypool', group: 'pontypool-landmarks', name: 'Shaheen Tandoori', note: 'Indian takeaway, New Inn, Pontypool.', lat: 51.6881655, lng: -3.0080141 },
+  { id: 'autofood-tamarind', town: 'pontypool', group: 'pontypool-landmarks', name: 'Tamarind', note: 'Indian takeaway, Cwmynyscoy, Pontypool.', lat: 51.6923563, lng: -3.0399109 },
+  { id: 'autofood-rehmat-spice', town: 'blaenavon', group: 'blaenavon-landmarks', name: 'Rehmat Spice', note: 'Pakistani/Indian takeaway, Broad St, Blaenavon.', lat: 51.7721558, lng: -3.0849789 },
+  { id: 'autofood-garlic-takeaway', town: 'pontypool', group: 'pontypool-landmarks', name: 'Garlic Indian & Bangladeshi', note: 'Indian/Bangladeshi takeaway, Griffithstown, Pontypool.', lat: 51.6858452, lng: -3.0257015 },
 ];
 
 const areaBoundaries = {

@@ -1101,6 +1101,7 @@ function getAreaCategory(area) {
   if (id.startsWith('attraction-')) return 'attraction';
   if (id.startsWith('park-')) return 'parks';
   if (id.startsWith('hotel-')) return 'hotels';
+  if (id.startsWith('autofood-')) return 'autofood';
   if (id.startsWith('food-')) return 'food';
   if (id.startsWith('entertainment-')) return 'entertainment';
   if (id.startsWith('bank-')) return 'banks';
@@ -1119,6 +1120,7 @@ const categoryLabels = {
   petrol:       'Petrol',
   hotels:       'Hotels',
   food:         'Restaurants',
+  autofood:     'New Restaurants',
   stations:     'Train Stations',
   education:    'Schools',
   banks:        'Banks',

@@ -1618,6 +1618,7 @@ function getAreaCategory(area) {
   if (id.startsWith('attraction-')) return 'attraction';
   if (id.startsWith('park-')) return 'parks';
   if (id.startsWith('hotel-')) return 'hotels';
+  if (id.startsWith('autofood-')) return 'autofood';
   if (id.startsWith('food-')) return 'food';
   if (id.startsWith('entertainment-')) return 'entertainment';
   if (id.startsWith('bank-')) return 'banks';
@@ -1724,6 +1725,7 @@ const categoryConfig = [
   { id: 'petrol',        label: 'Petrol Stations',    icon: '⛽' },
   { id: 'hotels',        label: 'Hotels',             icon: '⬟' },
   { id: 'food',          label: 'Restaurants & Food', icon: '◆' },
+  { id: 'autofood',      label: 'New Restaurants ★',  icon: '◆' },
   { id: 'stations',      label: 'Train Stations',     icon: '➤' },
   { id: 'education',     label: 'Schools & College',  icon: '✎' },
   { id: 'banks',         label: 'Banks',              icon: '£' },
