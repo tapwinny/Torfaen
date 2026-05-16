@@ -885,8 +885,8 @@ button.btn.ghost {
       <button class="mode-card" data-mode="landmarks">
         <div class="mode-icon">♛</div>
         <h3>Landmarks</h3>
-        <p>Which area is <em>The Open Hearth</em> in? <em>Tesco Llantarnam</em>? You'll be shown a landmark and pick the area it sits in.</p>
-        <div class="mode-meta">Multiple choice · 20 questions</div>
+        <p>Where is <em>The Open Hearth</em>? <em>Tesco</em>? You'll be shown a landmark name and have to tap its location on the map.</p>
+        <div class="mode-meta">Map · 20 questions</div>
       </button>
 
       <button class="mode-card" data-mode="dropoff">
@@ -1184,6 +1184,7 @@ let findAreasFound = 0;           // count successfully found
 let findAreasMissed = 0;          // count failed (3 tries used up)
 let findAreasPolygons = {};       // areaId -> Leaflet polygon layer
 let findAreasTotal = 0;
+let findAreasResolving = false;   // true while a question's feedback/animation is playing
 
 // =============== SCREEN MANAGEMENT ===============
 function showScreen(id) {
@@ -1404,35 +1405,28 @@ function renderWeakSpotQuestion() {
   const confirmDropoffBtn = document.getElementById('btn-confirm-dropoff');
   confirmDropoffBtn.style.display = 'none';
 
+  // Both kinds (area + landmark) now use the tap-the-map flow
+  document.getElementById('q-map-mode').style.display = 'block';
+  document.getElementById('q-choices-mode').style.display = 'none';
+  confirmGuessBtn.style.display = 'inline-block';
+  confirmGuessBtn.disabled = true;
+  document.getElementById('q-prompt').textContent = 'Where on the map is...';
+
   if (entry.kind === 'area') {
-    // Map-tap question
-    document.getElementById('q-map-mode').style.display = 'block';
-    document.getElementById('q-choices-mode').style.display = 'none';
-    confirmGuessBtn.style.display = 'inline-block';
-    confirmGuessBtn.disabled = true;
-    document.getElementById('q-prompt').textContent = 'Where on the map is...';
     document.getElementById('q-target').textContent = target.name;
     document.getElementById('q-target-note').textContent = `(weak spot · in ${capitalize(target.town)})`;
-
-    if (guessMarker) { quizMap.removeLayer(guessMarker); guessMarker = null; }
-    if (correctMarker) { quizMap.removeLayer(correctMarker); correctMarker = null; }
-    if (distanceLine) { quizMap.removeLayer(distanceLine); distanceLine = null; }
-    quizMap.eachLayer(layer => { if (layer instanceof L.Polygon) quizMap.removeLayer(layer); });
-    quizMap.setView([51.70, -3.05], 11);
-    setTimeout(() => quizMap.invalidateSize(), 80);
   } else {
-    // Multiple-choice landmark question
-    document.getElementById('q-map-mode').style.display = 'none';
-    document.getElementById('q-choices-mode').style.display = 'block';
-    confirmGuessBtn.style.display = 'none';
-    document.getElementById('q-prompt').textContent = 'Which area is this in...';
-    document.getElementById('q-target').textContent = target.name;
+    document.getElementById('q-target').textContent = stripAreaSuffix(target.name);
     const cat = getAreaCategory(target);
     document.getElementById('q-target-note').textContent = `(weak spot · ${categoryLabels[cat] || cat})`;
-    document.getElementById('q-landmark-reveal').style.display = 'none';
-    if (landmarkRevealMap) { landmarkRevealMap.remove(); landmarkRevealMap = null; }
-    renderLandmarkChoices(target);
   }
+
+  if (guessMarker) { quizMap.removeLayer(guessMarker); guessMarker = null; }
+  if (correctMarker) { quizMap.removeLayer(correctMarker); correctMarker = null; }
+  if (distanceLine) { quizMap.removeLayer(distanceLine); distanceLine = null; }
+  quizMap.eachLayer(layer => { if (layer instanceof L.Polygon) quizMap.removeLayer(layer); });
+  quizMap.setView([51.70, -3.05], 11);
+  setTimeout(() => quizMap.invalidateSize(), 80);
 }
 
 function setupForMode() {
@@ -1457,7 +1451,7 @@ function setupForMode() {
     subtitle.textContent = 'Pick which towns\u2019 areas to drill. You\u2019ll click each area on the map until you\u2019ve found them all.';
   } else {
     title.textContent = 'Set up Landmarks quiz';
-    subtitle.textContent = 'You\'ll be shown a landmark and pick the area it sits in.';
+    subtitle.textContent = 'You\'ll be shown a landmark name and have to tap its location on the map.';
     catBlock.style.display = 'block';
     renderCategoryChips();
   }
@@ -1610,13 +1604,14 @@ document.getElementById('btn-start-quiz').addEventListener('click', () => {
   document.getElementById('q-total').textContent = questionPool.length;
   showScreen('screen-quiz');
 
-  // Show the right answer panel for this mode
-  document.getElementById('q-map-mode').style.display     = currentMode === 'areas'     ? 'block' : 'none';
-  document.getElementById('q-choices-mode').style.display = currentMode === 'landmarks' ? 'block' : 'none';
+  // Show the right answer panel for this mode.
+  // Areas AND Landmarks both use the tap-the-map panel now.
+  document.getElementById('q-map-mode').style.display     = (currentMode === 'areas' || currentMode === 'landmarks') ? 'block' : 'none';
+  document.getElementById('q-choices-mode').style.display = 'none';
   document.getElementById('q-dropoff-mode').style.display = currentMode === 'dropoff'   ? 'block' : 'none';
   document.getElementById('q-findareas-mode').style.display = 'none';
 
-  if (currentMode === 'areas')   initQuizMap();
+  if (currentMode === 'areas' || currentMode === 'landmarks') initQuizMap();
   if (currentMode === 'dropoff') initDropoffMap();
   renderQuestion();
 });
@@ -1631,6 +1626,7 @@ function startFindAreas(shuffledAreas) {
   findAreasFound = 0;
   findAreasMissed = 0;
   findAreasTotal = shuffledAreas.length;
+  findAreasResolving = false;
   findAreasPolygons = {};
 
   showScreen('screen-quiz');
@@ -1705,6 +1701,7 @@ function initFindAreasMap() {
 
 function renderFindAreasQuestion() {
   findAreasTries = 0;
+  findAreasResolving = false;   // unlock clicks for the new question
   const area = findAreasQueue[findAreasCurrentIdx];
 
   document.getElementById('q-prompt').textContent = 'Click this area on the map';
@@ -1724,6 +1721,11 @@ function renderFindAreasQuestion() {
 }
 
 function handleFindAreasClick(latlng) {
+  // Ignore clicks while a question is resolving (animation/feedback in progress).
+  // Without this, a fast double-tap or stray click could skip the next area —
+  // especially the very last one, marking it missed without a chance to answer.
+  if (findAreasResolving) return;
+
   const area = findAreasQueue[findAreasCurrentIdx];
   const clickedAreaId = findContainingAreaId(latlng.lat, latlng.lng);
   const fb = document.getElementById('q-feedback');
@@ -1732,6 +1734,7 @@ function handleFindAreasClick(latlng) {
 
   if (clickedAreaId === area.id) {
     // Correct! Light up the polygon green permanently
+    findAreasResolving = true;
     findAreasFound++;
     const poly = findAreasPolygons[area.id];
     if (poly) {
@@ -1755,6 +1758,7 @@ function handleFindAreasClick(latlng) {
     const remaining = 3 - findAreasTries;
     if (findAreasTries >= 3) {
       // Out of tries — reveal the correct area in red, mark missed, move on
+      findAreasResolving = true;
       findAreasMissed++;
       const poly = findAreasPolygons[area.id];
       if (poly) {
@@ -2219,9 +2223,22 @@ function submitAreaGuess() {
   // Lock the marker now that they've confirmed
   guessMarker.dragging.disable();
 
-  // Did the guess fall inside the correct polygon?
   const guessedAreaId = findContainingAreaId(latlng.lat, latlng.lng);
-  const inCorrectArea = guessedAreaId === target.id;
+
+  // Determine the "correct area":
+  //  - Areas mode: the target IS the area, correct if guess is inside target's polygon
+  //  - Landmarks mode: the target is a pin; correct if guess is inside the area
+  //    that actually contains that landmark
+  let correctAreaId, inCorrectArea;
+  const isLandmark = currentMode === 'landmarks' ||
+                     (currentMode === 'weakspots' && questionPool[qIndex].kind === 'landmark');
+  if (isLandmark) {
+    correctAreaId = findContainingAreaId(target.lat, target.lng);
+    inCorrectArea = guessedAreaId !== null && guessedAreaId === correctAreaId;
+  } else {
+    correctAreaId = target.id;
+    inCorrectArea = guessedAreaId === target.id;
+  }
 
   // Distance from guess to actual pin
   const dist = distanceMetres(latlng.lat, latlng.lng, target.lat, target.lng);
@@ -2246,13 +2263,24 @@ function submitAreaGuess() {
     opacity: 0.9,
   }).addTo(quizMap);
 
-  // Also draw the correct polygon to show the area shape
-  if (areaBoundaries[target.id]) {
-    L.polygon(areaBoundaries[target.id], {
+  // Draw the correct area's polygon (green) so they see where it actually is
+  if (correctAreaId && areaBoundaries[correctAreaId]) {
+    L.polygon(areaBoundaries[correctAreaId], {
       color: '#4ade80',
       weight: 3,
       fillColor: '#4ade80',
       fillOpacity: 0.15,
+      interactive: false,
+    }).addTo(quizMap);
+  }
+  // If they tapped inside a *different* area, show that one in red
+  if (!inCorrectArea && guessedAreaId && guessedAreaId !== correctAreaId && areaBoundaries[guessedAreaId]) {
+    L.polygon(areaBoundaries[guessedAreaId], {
+      color: '#f87171',
+      weight: 3,
+      fillColor: '#f87171',
+      fillOpacity: 0.12,
+      dashArray: '6 5',
       interactive: false,
     }).addTo(quizMap);
   }
@@ -2266,21 +2294,28 @@ function submitAreaGuess() {
   if (confirmBtn) confirmBtn.style.display = 'none';
 
   // Show feedback
-  showFeedback(inCorrectArea, target, dist, guessedAreaId);
+  showFeedback(inCorrectArea, target, dist, guessedAreaId, isLandmark, correctAreaId);
 }
 
-function showFeedback(correct, target, dist, guessedAreaId) {
+function showFeedback(correct, target, dist, guessedAreaId, isLandmark, correctAreaId) {
   const fb = document.getElementById('q-feedback');
   const lbl = document.getElementById('q-feedback-label');
   const txt = document.getElementById('q-feedback-text');
   fb.classList.remove('correct', 'wrong');
   fb.classList.add('visible');
 
+  const correctArea = correctAreaId ? areas.find(a => a.id === correctAreaId) : null;
+  const correctAreaName = correctArea ? correctArea.name : (isLandmark ? 'the right area' : target.name);
+
   if (correct) {
     correctCount++;
     fb.classList.add('correct');
     lbl.textContent = '✓ Correct';
-    txt.innerHTML = `<strong>${target.name}</strong> — you were ${formatDistance(dist)} from the pin.`;
+    if (isLandmark) {
+      txt.innerHTML = `<strong>${stripAreaSuffix(target.name)}</strong> is in <strong>${correctAreaName}</strong> — you were ${formatDistance(dist)} from it.`;
+    } else {
+      txt.innerHTML = `<strong>${target.name}</strong> — you were ${formatDistance(dist)} from the pin.`;
+    }
     recordItemResult(target.id, target.name, true);
   } else {
     wrongCount++;
@@ -2289,15 +2324,19 @@ function showFeedback(correct, target, dist, guessedAreaId) {
     let where = '';
     if (guessedAreaId) {
       const guessedArea = areas.find(a => a.id === guessedAreaId);
-      where = ` You tapped inside <strong>${guessedArea.name}</strong>.`;
+      where = ` You tapped inside <strong>${guessedArea ? guessedArea.name : 'another area'}</strong>.`;
     } else {
       where = ' You tapped outside any boundary.';
     }
-    txt.innerHTML = `The correct area is <strong>${target.name}</strong>.${where} You were ${formatDistance(dist)} from the pin.`;
+    if (isLandmark) {
+      txt.innerHTML = `<strong>${stripAreaSuffix(target.name)}</strong> is in <strong>${correctAreaName}</strong>.${where} You were ${formatDistance(dist)} away.`;
+    } else {
+      txt.innerHTML = `The correct area is <strong>${target.name}</strong>.${where} You were ${formatDistance(dist)} from the pin.`;
+    }
     wrongAnswers.push({
-      question: target.name,
-      yourAnswer: guessedAreaId ? areas.find(a => a.id === guessedAreaId).name : 'outside any boundary',
-      correct: target.name,
+      question: isLandmark ? stripAreaSuffix(target.name) : target.name,
+      yourAnswer: guessedAreaId ? (areas.find(a => a.id === guessedAreaId)||{}).name || 'wrong area' : 'outside any boundary',
+      correct: correctAreaName,
     });
     recordItemResult(target.id, target.name, false);
   }
@@ -2470,21 +2509,27 @@ function renderQuestion() {
   // Manage the Confirm buttons: each mode has its own
   const confirmGuessBtn = document.getElementById('btn-confirm-guess');
   const confirmDropoffBtn = document.getElementById('btn-confirm-dropoff');
-  confirmGuessBtn.style.display = currentMode === 'areas' ? 'inline-block' : 'none';
+  // Areas AND Landmarks both use the map + tap + confirm flow now
+  confirmGuessBtn.style.display = (currentMode === 'areas' || currentMode === 'landmarks') ? 'inline-block' : 'none';
   confirmGuessBtn.disabled = true;
   confirmDropoffBtn.style.display = currentMode === 'dropoff' ? 'inline-block' : 'none';
   confirmDropoffBtn.disabled = true;
 
-  if (currentMode === 'areas') {
+  if (currentMode === 'areas' || currentMode === 'landmarks') {
+    const isLandmark = currentMode === 'landmarks';
     document.getElementById('q-prompt').textContent = 'Where on the map is...';
-    document.getElementById('q-target').textContent = target.name;
-    document.getElementById('q-target-note').textContent = `(in ${capitalize(target.town)})`;
+    document.getElementById('q-target').textContent = isLandmark ? stripAreaSuffix(target.name) : target.name;
+    if (isLandmark) {
+      const cat = getAreaCategory(target);
+      document.getElementById('q-target-note').textContent = `(${categoryLabels[cat] || cat})`;
+    } else {
+      document.getElementById('q-target-note').textContent = `(in ${capitalize(target.town)})`;
+    }
 
-    // Reset map for next question — remove markers/line, keep map view roughly the same
+    // Reset map for next question — remove markers/line
     if (guessMarker) { quizMap.removeLayer(guessMarker); guessMarker = null; }
     if (correctMarker) { quizMap.removeLayer(correctMarker); correctMarker = null; }
     if (distanceLine) { quizMap.removeLayer(distanceLine); distanceLine = null; }
-    // Remove any leftover polygon layers
     quizMap.eachLayer(layer => {
       if (layer instanceof L.Polygon) quizMap.removeLayer(layer);
     });
@@ -2519,20 +2564,37 @@ function renderQuestion() {
     // Centre the view on the start so user can begin drawing
     dropoffMap.setView([start.lat, start.lng], 14);
     updateDropoffStatus();
-  } else {
-    document.getElementById('q-prompt').textContent = 'Which area is this in...';
-    document.getElementById('q-target').textContent = target.name;
-    const cat = getAreaCategory(target);
-    document.getElementById('q-target-note').textContent = `(${categoryLabels[cat] || cat})`;
-    // Hide the reveal map from the previous question
-    document.getElementById('q-landmark-reveal').style.display = 'none';
-    if (landmarkRevealMap) { landmarkRevealMap.remove(); landmarkRevealMap = null; }
-    renderLandmarkChoices(target);
   }
 }
 
 function capitalize(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// Strip a giveaway area-name suffix from a landmark name for quiz display.
+// "Tesco — Llantarnam" -> "Tesco";  "Spar, New Inn" -> "Spar".
+// Only strips if the trailing part matches a known area/town name, so names
+// like "The Open Hearth" or "New Inn Railway Station" stay intact.
+const _areaNameWords = (function () {
+  const set = new Set();
+  areas.forEach(a => {
+    set.add(a.name.toLowerCase());
+    if (a.town) set.add(a.town.toLowerCase());
+  });
+  return set;
+})();
+
+function stripAreaSuffix(name) {
+  // Split on the last em-dash, en-dash, hyphen-with-spaces, or comma
+  const m = name.match(/^(.*?)\s*[—–-]\s*([^—–-]+)$/) || name.match(/^(.*?),\s*([^,]+)$/);
+  if (!m) return name;
+  const head = m[1].trim();
+  const tail = m[2].trim().toLowerCase();
+  // Only strip if the tail looks like an area/town name (the giveaway)
+  if (_areaNameWords.has(tail) && head.length >= 2) {
+    return head;
+  }
+  return name;
 }
 
 function renderLandmarkChoices(target) {
