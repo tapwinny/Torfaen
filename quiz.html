@@ -427,6 +427,40 @@ button.btn.ghost {
   margin-bottom: 16px;
 }
 
+#landmark-reveal-map {
+  height: 45vh;
+  min-height: 340px;
+  background: var(--paper-dark);
+  border: 1px solid var(--line-bright);
+  margin-bottom: 16px;
+}
+
+#q-landmark-reveal {
+  margin-top: 16px;
+  animation: reveal-fade-in 0.4s ease;
+}
+
+@keyframes reveal-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reveal-map-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: var(--paper-dark);
+  border: 1px dashed var(--line-bright);
+  padding: 8px 14px;
+  margin-bottom: 8px;
+}
+
+.reveal-map-label .legend-green { color: var(--green); font-weight: 600; }
+.reveal-map-label .legend-red   { color: var(--red);   font-weight: 600; }
+.reveal-map-label .legend-pin   { color: var(--gold);  font-weight: 600; }
+
 .map-hint {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
@@ -882,6 +916,10 @@ button.btn.ghost {
     <!-- LANDMARKS MODE: multiple choice -->
     <div id="q-choices-mode" style="display: none;">
       <div class="choices" id="q-choices"></div>
+      <div id="q-landmark-reveal" style="display: none;">
+        <div class="reveal-map-label" id="reveal-map-label"></div>
+        <div id="landmark-reveal-map"></div>
+      </div>
     </div>
 
     <div class="feedback" id="q-feedback">
@@ -1751,8 +1789,87 @@ function showLandmarkFeedback(correct, target, chosenAreaId, correctAreaId) {
       correct: correctArea.name,
     });
   }
+  // Show the reveal map: landmark pin + correct polygon (green) + wrong polygon (red, if wrong)
+  showLandmarkRevealMap(target, correctAreaId, correct ? null : chosenAreaId);
   updateScoreUI();
   showNextButton();
+}
+
+let landmarkRevealMap = null;
+
+function showLandmarkRevealMap(target, correctAreaId, wrongAreaId) {
+  const wrap = document.getElementById('q-landmark-reveal');
+  wrap.style.display = 'block';
+
+  // Build the legend text
+  const labelEl = document.getElementById('reveal-map-label');
+  let legend = `<span class="legend-pin">◆ ${target.name}</span> &nbsp;·&nbsp; <span class="legend-green">▢ correct area</span>`;
+  if (wrongAreaId) legend += ` &nbsp;·&nbsp; <span class="legend-red">▢ your answer</span>`;
+  labelEl.innerHTML = legend;
+
+  // (Re)create the map fresh each time
+  if (landmarkRevealMap) {
+    landmarkRevealMap.remove();
+    landmarkRevealMap = null;
+  }
+  landmarkRevealMap = L.map('landmark-reveal-map', {
+    zoomControl: true,
+    scrollWheelZoom: false,
+  }).setView([target.lat, target.lng], 14);
+
+  // Labelled tiles — this is the learning moment, so place names help
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 18,
+  }).addTo(landmarkRevealMap);
+
+  const fitLayers = [];
+
+  // Correct area polygon (green)
+  if (areaBoundaries[correctAreaId]) {
+    const poly = L.polygon(areaBoundaries[correctAreaId], {
+      color: '#4ade80',
+      weight: 3,
+      fillColor: '#4ade80',
+      fillOpacity: 0.18,
+      interactive: false,
+    }).addTo(landmarkRevealMap);
+    fitLayers.push(poly);
+  }
+
+  // Wrong area polygon (red) — only if the user answered incorrectly
+  if (wrongAreaId && areaBoundaries[wrongAreaId]) {
+    const poly = L.polygon(areaBoundaries[wrongAreaId], {
+      color: '#f87171',
+      weight: 3,
+      fillColor: '#f87171',
+      fillOpacity: 0.15,
+      interactive: false,
+      dashArray: '6 5',
+    }).addTo(landmarkRevealMap);
+    fitLayers.push(poly);
+  }
+
+  // The landmark pin itself (gold diamond)
+  const pin = L.marker([target.lat, target.lng], {
+    icon: L.divIcon({
+      className: 'quiz-marker-icon',
+      html: '<div class="dropoff-marker-start"></div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+    }),
+    interactive: false,
+  }).addTo(landmarkRevealMap);
+  fitLayers.push(pin);
+
+  // Fit the map to show everything
+  setTimeout(() => {
+    landmarkRevealMap.invalidateSize();
+    if (fitLayers.length > 0) {
+      const group = L.featureGroup(fitLayers);
+      landmarkRevealMap.fitBounds(group.getBounds(), { padding: [40, 40], maxZoom: 15 });
+    }
+  }, 100);
 }
 
 function updateScoreUI() {
@@ -1863,6 +1980,9 @@ function renderQuestion() {
     document.getElementById('q-target').textContent = target.name;
     const cat = getAreaCategory(target);
     document.getElementById('q-target-note').textContent = `(${categoryLabels[cat] || cat})`;
+    // Hide the reveal map from the previous question
+    document.getElementById('q-landmark-reveal').style.display = 'none';
+    if (landmarkRevealMap) { landmarkRevealMap.remove(); landmarkRevealMap = null; }
     renderLandmarkChoices(target);
   }
 }
