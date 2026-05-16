@@ -148,13 +148,9 @@ h2 {
 /* ====== START SCREEN ====== */
 .mode-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-top: 28px;
-}
-
-@media (max-width: 950px) {
-  .mode-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 680px) {
@@ -433,6 +429,15 @@ button.btn.ghost {
   background: var(--paper-dark);
   border: 1px solid var(--line-bright);
   margin-bottom: 16px;
+}
+
+#findareas-map {
+  height: 62vh;
+  min-height: 440px;
+  background: var(--paper-dark);
+  border: 1px solid var(--line-bright);
+  margin-bottom: 16px;
+  cursor: crosshair;
 }
 
 #q-landmark-reveal {
@@ -833,6 +838,13 @@ button.btn.ghost {
         <p>"Take me from <em>Morrisons</em> to <em>New Inn Station</em>." Drive the route yourself by drawing on the map. Land within 50m of the destination to pass.</p>
         <div class="mode-meta">Map · 20 questions</div>
       </button>
+
+      <button class="mode-card" data-mode="findareas">
+        <div class="mode-icon">⊚</div>
+        <h3>Find Areas</h3>
+        <p>"Click <em>Two Locks</em>." Find every area on the map by clicking it. Works through all the areas in your chosen towns until you've found them all.</p>
+        <div class="mode-meta">Map · all areas</div>
+      </button>
     </div>
   </div>
 
@@ -922,6 +934,12 @@ button.btn.ghost {
       </div>
     </div>
 
+    <!-- FIND AREAS MODE: click each area on the map -->
+    <div id="q-findareas-mode" style="display: none;">
+      <div class="map-hint">Click the area named above. You get <strong>3 tries</strong> per area — found areas turn green.</div>
+      <div id="findareas-map"></div>
+    </div>
+
     <div class="feedback" id="q-feedback">
       <div class="feedback-label" id="q-feedback-label"></div>
       <div id="q-feedback-text"></div>
@@ -1001,6 +1019,16 @@ let dropoffRouteCoords = [];         // [[lat,lng], ...] coordinates of route
 let dropoffStrokeStarts = [];        // indices in dropoffRouteCoords where each stroke begins (for undo)
 let dropoffIsDrawing = false;
 let dropoffDistanceLine = null;
+
+// Map (for find-areas mode)
+let findAreasMap = null;
+let findAreasQueue = [];          // shuffled list of area objects still to find
+let findAreasCurrentIdx = 0;      // index into findAreasQueue
+let findAreasTries = 0;           // wrong tries on the current area (max 3)
+let findAreasFound = 0;           // count successfully found
+let findAreasMissed = 0;          // count failed (3 tries used up)
+let findAreasPolygons = {};       // areaId -> Leaflet polygon layer
+let findAreasTotal = 0;
 
 // =============== SCREEN MANAGEMENT ===============
 function showScreen(id) {
@@ -1129,6 +1157,9 @@ function setupForMode() {
     title.textContent = 'Set up Drop-off quiz';
     subtitle.textContent = 'You\'ll be given a pick-up and a destination. Drive there by drawing your route, and drop the passenger within 50m of the actual spot.';
     scopeBlock.style.display = 'block';
+  } else if (currentMode === 'findareas') {
+    title.textContent = 'Set up Find Areas';
+    subtitle.textContent = 'Pick which towns\u2019 areas to drill. You\u2019ll click each area on the map until you\u2019ve found them all.';
   } else {
     title.textContent = 'Set up Landmarks quiz';
     subtitle.textContent = 'You\'ll be shown a landmark and pick the area it sits in.';
@@ -1206,6 +1237,9 @@ function getQuestionableItems() {
     if (currentMode === 'areas') {
       // Areas mode: only residential areas with a boundary polygon
       return areaBoundaries.hasOwnProperty(a.id);
+    } else if (currentMode === 'findareas') {
+      // Find Areas: same as Areas — residential areas with a boundary polygon
+      return areaBoundaries.hasOwnProperty(a.id);
     } else if (currentMode === 'dropoff') {
       // Drop-off mode: landmarks only, filtered by scope (taxi-test vs all)
       const cat = getAreaCategory(a);
@@ -1250,6 +1284,12 @@ document.getElementById('btn-start-quiz').addEventListener('click', () => {
   if (pool.length < 4) return;
   const shuffled = shuffle(pool);
 
+  // Find Areas mode has its own flow — handle it separately and bail out
+  if (currentMode === 'findareas') {
+    startFindAreas(shuffled);
+    return;
+  }
+
   if (currentMode === 'dropoff') {
     // Drop-off mode: each question is a (start, destination) pair.
     // Pair each destination with a random start, but only from a "compatible" town
@@ -1279,11 +1319,209 @@ document.getElementById('btn-start-quiz').addEventListener('click', () => {
   document.getElementById('q-map-mode').style.display     = currentMode === 'areas'     ? 'block' : 'none';
   document.getElementById('q-choices-mode').style.display = currentMode === 'landmarks' ? 'block' : 'none';
   document.getElementById('q-dropoff-mode').style.display = currentMode === 'dropoff'   ? 'block' : 'none';
+  document.getElementById('q-findareas-mode').style.display = 'none';
 
   if (currentMode === 'areas')   initQuizMap();
   if (currentMode === 'dropoff') initDropoffMap();
   renderQuestion();
 });
+
+// ============================================================================
+// FIND AREAS MODE
+// ============================================================================
+function startFindAreas(shuffledAreas) {
+  findAreasQueue = shuffledAreas;
+  findAreasCurrentIdx = 0;
+  findAreasTries = 0;
+  findAreasFound = 0;
+  findAreasMissed = 0;
+  findAreasTotal = shuffledAreas.length;
+  findAreasPolygons = {};
+
+  showScreen('screen-quiz');
+
+  // Show only the find-areas panel
+  document.getElementById('q-map-mode').style.display      = 'none';
+  document.getElementById('q-choices-mode').style.display  = 'none';
+  document.getElementById('q-dropoff-mode').style.display  = 'none';
+  document.getElementById('q-findareas-mode').style.display = 'block';
+
+  // Header: use the score line for found / missed, progress for X/total
+  document.getElementById('q-total').textContent = findAreasTotal;
+
+  // Hide buttons that don't apply to this mode
+  document.getElementById('btn-confirm-guess').style.display = 'none';
+  document.getElementById('btn-confirm-dropoff').style.display = 'none';
+  document.getElementById('btn-next').style.display = 'none';
+  document.getElementById('btn-skip').style.display = 'none';
+  hideMapNextButtons();
+
+  initFindAreasMap();
+  renderFindAreasQuestion();
+}
+
+function initFindAreasMap() {
+  if (findAreasMap) {
+    findAreasMap.remove();
+    findAreasMap = null;
+  }
+  findAreasMap = L.map('findareas-map', {
+    zoomControl: true,
+    scrollWheelZoom: true,
+  }).setView([51.70, -3.05], 11);
+
+  // Dark, no labels — so area names aren't given away
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap, © CartoDB',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(findAreasMap);
+
+  // Draw every area in the queue as a faint outline (so the user can see shapes to aim at)
+  findAreasQueue.forEach(area => {
+    if (!areaBoundaries[area.id]) return;
+    const poly = L.polygon(areaBoundaries[area.id], {
+      color: '#8b5cf6',
+      weight: 1.5,
+      fillColor: '#8b5cf6',
+      fillOpacity: 0.06,
+      opacity: 0.5,
+      interactive: false,
+    }).addTo(findAreasMap);
+    findAreasPolygons[area.id] = poly;
+  });
+
+  // Fit the map to all the areas in play
+  const allPts = [];
+  findAreasQueue.forEach(a => {
+    if (areaBoundaries[a.id]) areaBoundaries[a.id].forEach(pt => allPts.push(pt));
+  });
+  if (allPts.length) {
+    findAreasMap.fitBounds(L.latLngBounds(allPts), { padding: [30, 30] });
+  }
+
+  // Click handler — check if the click is inside the current target area
+  findAreasMap.on('click', e => {
+    handleFindAreasClick(e.latlng);
+  });
+
+  setTimeout(() => findAreasMap.invalidateSize(), 100);
+}
+
+function renderFindAreasQuestion() {
+  findAreasTries = 0;
+  const area = findAreasQueue[findAreasCurrentIdx];
+
+  document.getElementById('q-prompt').textContent = 'Click this area on the map';
+  document.getElementById('q-target').textContent = area.name;
+  document.getElementById('q-target-note').textContent = `(in ${capitalize(area.town)}) · 3 tries`;
+
+  // Progress UI
+  document.getElementById('q-current').textContent = findAreasCurrentIdx + 1;
+  document.getElementById('q-progress-fill').style.width =
+    `${(findAreasCurrentIdx / findAreasTotal) * 100}%`;
+  document.getElementById('q-right').textContent = findAreasFound;
+  document.getElementById('q-wrong').textContent = findAreasMissed;
+
+  // Clear any old feedback
+  const fb = document.getElementById('q-feedback');
+  fb.classList.remove('visible', 'correct', 'wrong');
+}
+
+function handleFindAreasClick(latlng) {
+  const area = findAreasQueue[findAreasCurrentIdx];
+  const clickedAreaId = findContainingAreaId(latlng.lat, latlng.lng);
+  const fb = document.getElementById('q-feedback');
+  const lbl = document.getElementById('q-feedback-label');
+  const txt = document.getElementById('q-feedback-text');
+
+  if (clickedAreaId === area.id) {
+    // Correct! Light up the polygon green permanently
+    findAreasFound++;
+    const poly = findAreasPolygons[area.id];
+    if (poly) {
+      poly.setStyle({
+        color: '#4ade80',
+        weight: 3,
+        fillColor: '#4ade80',
+        fillOpacity: 0.3,
+        opacity: 1,
+      });
+    }
+    fb.classList.remove('wrong');
+    fb.classList.add('visible', 'correct');
+    lbl.textContent = '✓ Found it';
+    txt.innerHTML = `<strong>${area.name}</strong> — correct.`;
+    document.getElementById('q-right').textContent = findAreasFound;
+    setTimeout(advanceFindAreas, 700);
+  } else {
+    findAreasTries++;
+    const remaining = 3 - findAreasTries;
+    if (findAreasTries >= 3) {
+      // Out of tries — reveal the correct area in red, mark missed, move on
+      findAreasMissed++;
+      const poly = findAreasPolygons[area.id];
+      if (poly) {
+        poly.setStyle({
+          color: '#f87171',
+          weight: 3,
+          fillColor: '#f87171',
+          fillOpacity: 0.28,
+          opacity: 1,
+          dashArray: '6 5',
+        });
+      }
+      fb.classList.remove('correct');
+      fb.classList.add('visible', 'wrong');
+      lbl.textContent = '✗ Out of tries';
+      txt.innerHTML = `That was <strong>${area.name}</strong> — shown in red. Moving on.`;
+      document.getElementById('q-wrong').textContent = findAreasMissed;
+      setTimeout(advanceFindAreas, 1400);
+    } else {
+      // Still have tries left
+      let where = '';
+      if (clickedAreaId) {
+        const clickedArea = areas.find(a => a.id === clickedAreaId);
+        where = ` That's ${clickedArea ? clickedArea.name : 'another area'}.`;
+      } else {
+        where = ' That\'s outside any area.';
+      }
+      fb.classList.remove('correct');
+      fb.classList.add('visible', 'wrong');
+      lbl.textContent = `✗ Try again (${remaining} ${remaining === 1 ? 'try' : 'tries'} left)`;
+      txt.innerHTML = `Not <strong>${area.name}</strong>.${where}`;
+    }
+  }
+}
+
+function advanceFindAreas() {
+  findAreasCurrentIdx++;
+  if (findAreasCurrentIdx >= findAreasQueue.length) {
+    showFindAreasResults();
+  } else {
+    renderFindAreasQuestion();
+  }
+}
+
+function showFindAreasResults() {
+  document.getElementById('result-correct').textContent = findAreasFound;
+  document.getElementById('result-total').textContent = findAreasTotal;
+  const pct = Math.round((findAreasFound / findAreasTotal) * 100);
+  document.getElementById('result-percent').textContent = `${pct}%`;
+
+  let msg;
+  if (pct === 100) msg = 'Every area found. You know the map cold.';
+  else if (pct >= 90) msg = 'Excellent — barely a gap in your knowledge.';
+  else if (pct >= 75) msg = 'Strong. A few areas to firm up.';
+  else if (pct >= 50) msg = 'Decent start — keep drilling the ones you missed.';
+  else msg = 'Lots to learn. Use the map page to study area locations.';
+  document.getElementById('result-message').textContent = msg;
+
+  // No per-question review list for this mode
+  document.getElementById('review-section').style.display = 'none';
+
+  showScreen('screen-results');
+}
 
 function initQuizMap() {
   // (Re-)create map. If it exists already, just invalidate size for layout.
