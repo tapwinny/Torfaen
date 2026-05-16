@@ -1298,7 +1298,7 @@ function initQuizMap() {
 
   // CartoDB Positron without labels — shows road network and natural features
   // but no place-name labels (so it's a proper test of where things are).
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap, © CartoDB',
     subdomains: 'abcd',
     maxZoom: 19,
@@ -1326,7 +1326,7 @@ function initDropoffMap() {
   }).setView([51.70, -3.05], 11);
 
   // Same no-labels tile style as the Areas quiz
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap, © CartoDB',
     subdomains: 'abcd',
     maxZoom: 19,
@@ -1350,9 +1350,9 @@ function initDropoffMap() {
       // First stroke ever on this question — create a fresh polyline
       dropoffRouteCoords = [[latlng.lat, latlng.lng]];
       dropoffRouteLine = L.polyline(dropoffRouteCoords, {
-        color: '#8b5cf6',
-        weight: 4,
-        opacity: 0.8,
+        color: '#f0abfc',
+        weight: 5,
+        opacity: 0.95,
       }).addTo(dropoffMap);
     } else {
       // Continuing — add the new starting point onto the existing line
