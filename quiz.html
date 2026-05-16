@@ -207,6 +207,62 @@ h2 {
   opacity: 0.8;
 }
 
+/* Per-card best/last score line */
+.mode-card .mode-stats {
+  margin-top: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.mode-card .mode-stats .stat-best { color: var(--green); font-weight: 600; }
+.mode-card .mode-stats .stat-last { color: var(--gold); }
+.mode-card .mode-stats .stat-empty { color: var(--ink-muted); font-style: italic; }
+
+/* Weak Spots card — distinct accent so it stands out */
+.mode-card-weak {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, var(--paper-dark) 0%, rgba(240, 171, 252, 0.06) 100%);
+}
+
+.mode-card-weak .mode-icon { color: var(--gold); }
+
+.mode-card-weak:disabled,
+.mode-card-weak.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+/* Stats footer (reset button) */
+.stats-footer {
+  margin-top: 28px;
+  display: flex;
+  justify-content: center;
+}
+
+.stats-reset {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--ink-muted);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.stats-reset:hover {
+  color: var(--red);
+  border-color: var(--red);
+}
+
 /* ====== FILTER SCREEN ====== */
 .filter-block {
   background: var(--paper-dark);
@@ -846,6 +902,17 @@ button.btn.ghost {
         <p>"Click <em>Two Locks</em>." Find every area on the map by clicking it. Works through all the areas in your chosen towns until you've found them all.</p>
         <div class="mode-meta">Map · all areas</div>
       </button>
+
+      <button class="mode-card mode-card-weak" data-mode="weakspots">
+        <div class="mode-icon">✦</div>
+        <h3>Weak Spots</h3>
+        <p>Practice only the places you've gotten wrong before. The quickest way to turn gaps into knowledge.</p>
+        <div class="mode-meta" id="weakspots-meta">No weak spots yet — play a quiz first</div>
+      </button>
+    </div>
+
+    <div class="stats-footer" id="stats-footer">
+      <button class="stats-reset" id="btn-reset-stats" type="button">Reset all progress</button>
     </div>
   </div>
 
@@ -990,8 +1057,95 @@ button.btn.ghost {
 
 const QUESTIONS_PER_QUIZ = 20;
 
+// ============================================================================
+// PERSISTENT STORAGE — scores + weak spots (localStorage)
+// ============================================================================
+// Schema (all under one key for simplicity):
+// {
+//   scores: { areas: {best, last, plays}, landmarks: {...}, dropoff: {...}, findareas: {...} },
+//   weakSpots: { "<itemId>": { name, wrong, right, lastWrong } }
+// }
+const STORAGE_KEY = 'torfaen_quiz_v1';
+
+function loadStore() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { scores: {}, weakSpots: {} };
+    const parsed = JSON.parse(raw);
+    return {
+      scores: parsed.scores || {},
+      weakSpots: parsed.weakSpots || {},
+    };
+  } catch (e) {
+    return { scores: {}, weakSpots: {} };
+  }
+}
+
+function saveStore(store) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  } catch (e) {
+    // localStorage might be unavailable (private mode etc) — fail silently
+  }
+}
+
+// Record a finished quiz's score for a given mode
+function recordScore(mode, correct, total) {
+  const store = loadStore();
+  if (!store.scores[mode]) {
+    store.scores[mode] = { best: 0, bestTotal: total, last: 0, lastTotal: total, plays: 0 };
+  }
+  const s = store.scores[mode];
+  s.last = correct;
+  s.lastTotal = total;
+  s.plays = (s.plays || 0) + 1;
+  // "Best" tracked as a percentage so different-length sessions compare fairly
+  const pct = total > 0 ? correct / total : 0;
+  const bestPct = s.bestTotal > 0 ? s.best / s.bestTotal : 0;
+  if (pct >= bestPct) {
+    s.best = correct;
+    s.bestTotal = total;
+  }
+  saveStore(store);
+}
+
+// Record an item the user got wrong (or right, to "heal" a weak spot)
+function recordItemResult(itemId, itemName, gotItRight) {
+  if (!itemId) return;
+  const store = loadStore();
+  if (!store.weakSpots[itemId]) {
+    store.weakSpots[itemId] = { name: itemName, wrong: 0, right: 0, lastWrong: null };
+  }
+  const w = store.weakSpots[itemId];
+  w.name = itemName; // keep name fresh
+  if (gotItRight) {
+    w.right = (w.right || 0) + 1;
+    // If they've now got it right more than wrong, it's no longer a weak spot — drop it
+    if (w.right >= w.wrong && w.wrong > 0) {
+      delete store.weakSpots[itemId];
+    }
+  } else {
+    w.wrong = (w.wrong || 0) + 1;
+    w.lastWrong = Date.now();
+  }
+  saveStore(store);
+}
+
+// Get the list of weak-spot item IDs (things gotten wrong, ordered worst-first)
+function getWeakSpotIds() {
+  const store = loadStore();
+  return Object.entries(store.weakSpots)
+    .filter(([id, w]) => (w.wrong || 0) > (w.right || 0))
+    .sort((a, b) => (b[1].wrong - b[1].right) - (a[1].wrong - a[1].right))
+    .map(([id]) => id);
+}
+
+function resetAllStats() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+}
+
 // State
-let currentMode = null;          // 'areas', 'landmarks', or 'dropoff'
+let currentMode = null;          // 'areas', 'landmarks', 'dropoff', 'findareas', 'weakspots'
 let activeTowns = new Set(['blaenavon', 'pontypool', 'cwmbran']);
 let activeCategories = new Set();  // for landmarks mode
 let dropoffScope = 'taxi';         // 'taxi' (recommended) or 'all' — for dropoff mode
@@ -1036,6 +1190,10 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Keep the start-screen stats fresh whenever it's shown
+  if (id === 'screen-start' && typeof renderStartScreenStats === 'function') {
+    renderStartScreenStats();
+  }
 }
 
 // =============== HELPERS ===============
@@ -1135,13 +1293,147 @@ const categoryLabels = {
 };
 
 // =============== MODE SELECT SCREEN ===============
+const modeLabels = {
+  areas: 'Areas', landmarks: 'Landmarks', dropoff: 'Drop-off',
+  findareas: 'Find Areas', weakspots: 'Weak Spots',
+};
+
+// Paint best/last score onto each mode card, and update the Weak Spots card state
+function renderStartScreenStats() {
+  const store = loadStore();
+
+  document.querySelectorAll('.mode-card').forEach(card => {
+    const mode = card.dataset.mode;
+    if (mode === 'weakspots') return; // handled separately below
+
+    // Remove any previously rendered stats line
+    const old = card.querySelector('.mode-stats');
+    if (old) old.remove();
+
+    const s = store.scores[mode];
+    const statsEl = document.createElement('div');
+    statsEl.className = 'mode-stats';
+    if (s && s.plays > 0) {
+      statsEl.innerHTML =
+        `<span class="stat-best">Best ${s.best}/${s.bestTotal}</span>` +
+        `<span class="stat-last">Last ${s.last}/${s.lastTotal}</span>` +
+        `<span>${s.plays} play${s.plays === 1 ? '' : 's'}</span>`;
+    } else {
+      statsEl.innerHTML = `<span class="stat-empty">Not played yet</span>`;
+    }
+    card.appendChild(statsEl);
+  });
+
+  // Weak Spots card: enable only if there are weak spots
+  const weakIds = getWeakSpotIds();
+  const weakCard = document.querySelector('.mode-card-weak');
+  const weakMeta = document.getElementById('weakspots-meta');
+  if (weakIds.length > 0) {
+    weakCard.classList.remove('disabled');
+    weakMeta.textContent = `${weakIds.length} weak spot${weakIds.length === 1 ? '' : 's'} to practice`;
+  } else {
+    weakCard.classList.add('disabled');
+    weakMeta.textContent = 'No weak spots yet — play a quiz first';
+  }
+}
+
 document.querySelectorAll('.mode-card').forEach(card => {
   card.addEventListener('click', () => {
-    currentMode = card.dataset.mode;
+    const mode = card.dataset.mode;
+    if (mode === 'weakspots') {
+      const weakIds = getWeakSpotIds();
+      if (weakIds.length === 0) return; // disabled, nothing to practice
+      startWeakSpots(weakIds);
+      return;
+    }
+    currentMode = mode;
     setupForMode();
     showScreen('screen-setup');
   });
 });
+
+// Weak Spots: build a quiz from previously-missed items. Each item is quizzed
+// in its "native" style — areas use the map, landmarks use multiple choice.
+function startWeakSpots(weakIds) {
+  // Resolve IDs to actual area/landmark objects that still exist in the data
+  const items = weakIds
+    .map(id => areas.find(a => a.id === id))
+    .filter(Boolean);
+
+  if (items.length === 0) return;
+
+  currentMode = 'weakspots';
+  // Each weak item gets quizzed as: landmark (has a containing area) -> multiple choice;
+  // residential area (has a boundary) -> map tap.
+  const prepared = items.map(item => {
+    const isResidentialArea = areaBoundaries.hasOwnProperty(item.id);
+    return { item, kind: isResidentialArea ? 'area' : 'landmark' };
+  });
+
+  questionPool = shuffle(prepared).slice(0, Math.min(QUESTIONS_PER_QUIZ, prepared.length));
+  qIndex = 0;
+  correctCount = 0;
+  wrongCount = 0;
+  wrongAnswers = [];
+  document.getElementById('q-total').textContent = questionPool.length;
+  showScreen('screen-quiz');
+
+  // Weak spots can mix area + landmark questions, so both panels may be used.
+  // We decide per-question in renderWeakSpotQuestion.
+  document.getElementById('q-map-mode').style.display      = 'none';
+  document.getElementById('q-choices-mode').style.display  = 'none';
+  document.getElementById('q-dropoff-mode').style.display  = 'none';
+  document.getElementById('q-findareas-mode').style.display = 'none';
+
+  initQuizMap();
+  renderWeakSpotQuestion();
+}
+
+function renderWeakSpotQuestion() {
+  answered = false;
+  const entry = questionPool[qIndex];
+  const target = entry.item;
+  document.getElementById('q-current').textContent = qIndex + 1;
+  document.getElementById('q-progress-fill').style.width = `${(qIndex / questionPool.length) * 100}%`;
+  document.getElementById('q-feedback').classList.remove('visible');
+  document.getElementById('btn-next').style.display = 'none';
+  document.getElementById('btn-skip').style.display = 'inline-block';
+  hideMapNextButtons();
+
+  const confirmGuessBtn = document.getElementById('btn-confirm-guess');
+  const confirmDropoffBtn = document.getElementById('btn-confirm-dropoff');
+  confirmDropoffBtn.style.display = 'none';
+
+  if (entry.kind === 'area') {
+    // Map-tap question
+    document.getElementById('q-map-mode').style.display = 'block';
+    document.getElementById('q-choices-mode').style.display = 'none';
+    confirmGuessBtn.style.display = 'inline-block';
+    confirmGuessBtn.disabled = true;
+    document.getElementById('q-prompt').textContent = 'Where on the map is...';
+    document.getElementById('q-target').textContent = target.name;
+    document.getElementById('q-target-note').textContent = `(weak spot · in ${capitalize(target.town)})`;
+
+    if (guessMarker) { quizMap.removeLayer(guessMarker); guessMarker = null; }
+    if (correctMarker) { quizMap.removeLayer(correctMarker); correctMarker = null; }
+    if (distanceLine) { quizMap.removeLayer(distanceLine); distanceLine = null; }
+    quizMap.eachLayer(layer => { if (layer instanceof L.Polygon) quizMap.removeLayer(layer); });
+    quizMap.setView([51.70, -3.05], 11);
+    setTimeout(() => quizMap.invalidateSize(), 80);
+  } else {
+    // Multiple-choice landmark question
+    document.getElementById('q-map-mode').style.display = 'none';
+    document.getElementById('q-choices-mode').style.display = 'block';
+    confirmGuessBtn.style.display = 'none';
+    document.getElementById('q-prompt').textContent = 'Which area is this in...';
+    document.getElementById('q-target').textContent = target.name;
+    const cat = getAreaCategory(target);
+    document.getElementById('q-target-note').textContent = `(weak spot · ${categoryLabels[cat] || cat})`;
+    document.getElementById('q-landmark-reveal').style.display = 'none';
+    if (landmarkRevealMap) { landmarkRevealMap.remove(); landmarkRevealMap = null; }
+    renderLandmarkChoices(target);
+  }
+}
 
 function setupForMode() {
   const title = document.getElementById('setup-title');
@@ -1512,6 +1804,8 @@ function showFindAreasResults() {
   const pct = Math.round((findAreasFound / findAreasTotal) * 100);
   document.getElementById('result-percent').textContent = `${pct}%`;
 
+  recordScore('findareas', findAreasFound, findAreasTotal);
+
   let msg;
   if (pct === 100) msg = 'Every area found. You know the map cold.';
   else if (pct >= 90) msg = 'Excellent — barely a gap in your knowledge.';
@@ -1862,11 +2156,13 @@ function showDropoffFeedback(target, dist) {
     fb.classList.add('correct');
     lbl.textContent = '✓ Perfect drop';
     txt.innerHTML = `You dropped the passenger ${formatDistance(dist)} from <strong>${target.name}</strong>. Spot on.`;
+    recordItemResult(target.id, target.name, true);
   } else if (dist <= 50) {
     correctCount++;
     fb.classList.add('correct');
     lbl.textContent = '✓ Acceptable drop';
     txt.innerHTML = `You dropped ${formatDistance(dist)} from <strong>${target.name}</strong>. Within sight — the passenger can walk the rest.`;
+    recordItemResult(target.id, target.name, true);
   } else {
     wrongCount++;
     fb.classList.add('wrong');
@@ -1877,6 +2173,7 @@ function showDropoffFeedback(target, dist) {
       yourAnswer: `dropped ${formatDistance(dist)} away`,
       correct: target.name,
     });
+    recordItemResult(target.id, target.name, false);
   }
   updateScoreUI();
   showNextButton();
@@ -1913,7 +2210,7 @@ function placeGuess(latlng) {
 function submitAreaGuess() {
   if (answered || !guessMarker) return;
   answered = true;
-  const target = questionPool[qIndex];
+  const target = currentMode === 'weakspots' ? questionPool[qIndex].item : questionPool[qIndex];
 
   // Get the guess position from the marker (user may have dragged it)
   const latlng = guessMarker.getLatLng();
@@ -1982,6 +2279,7 @@ function showFeedback(correct, target, dist, guessedAreaId) {
     fb.classList.add('correct');
     lbl.textContent = '✓ Correct';
     txt.innerHTML = `<strong>${target.name}</strong> — you were ${formatDistance(dist)} from the pin.`;
+    recordItemResult(target.id, target.name, true);
   } else {
     wrongCount++;
     fb.classList.add('wrong');
@@ -1999,6 +2297,7 @@ function showFeedback(correct, target, dist, guessedAreaId) {
       yourAnswer: guessedAreaId ? areas.find(a => a.id === guessedAreaId).name : 'outside any boundary',
       correct: target.name,
     });
+    recordItemResult(target.id, target.name, false);
   }
   updateScoreUI();
   showNextButton();
@@ -2018,6 +2317,7 @@ function showLandmarkFeedback(correct, target, chosenAreaId, correctAreaId) {
     fb.classList.add('correct');
     lbl.textContent = '✓ Correct';
     txt.innerHTML = `<strong>${target.name}</strong> is in <strong>${correctArea.name}</strong>.`;
+    recordItemResult(target.id, target.name, true);
   } else {
     wrongCount++;
     fb.classList.add('wrong');
@@ -2029,6 +2329,7 @@ function showLandmarkFeedback(correct, target, chosenAreaId, correctAreaId) {
       yourAnswer: chosenArea.name,
       correct: correctArea.name,
     });
+    recordItemResult(target.id, target.name, false);
   }
   // Show the reveal map: landmark pin + correct polygon (green) + wrong polygon (red, if wrong)
   showLandmarkRevealMap(target, correctAreaId, correct ? null : chosenAreaId);
@@ -2279,6 +2580,8 @@ document.getElementById('btn-next').addEventListener('click', () => {
   qIndex++;
   if (qIndex >= questionPool.length) {
     showResults();
+  } else if (currentMode === 'weakspots') {
+    renderWeakSpotQuestion();
   } else {
     renderQuestion();
   }
@@ -2287,9 +2590,10 @@ document.getElementById('btn-next').addEventListener('click', () => {
 document.getElementById('btn-skip').addEventListener('click', () => {
   // Skipped = wrong
   wrongCount++;
-  const target = questionPool[qIndex];
+  const entry = questionPool[qIndex];
+  const target = currentMode === 'weakspots' ? entry.item : entry;
   let questionLabel, correctLabel;
-  if (currentMode === 'areas') {
+  if (currentMode === 'areas' || (currentMode === 'weakspots' && entry.kind === 'area')) {
     questionLabel = target.name;
     correctLabel = target.name;
   } else if (currentMode === 'dropoff') {
@@ -2306,9 +2610,12 @@ document.getElementById('btn-skip').addEventListener('click', () => {
     yourAnswer: '(skipped)',
     correct: correctLabel,
   });
+  // Skipping a weak spot keeps it as a weak spot
+  recordItemResult(target.id, target.name, false);
   updateScoreUI();
   qIndex++;
   if (qIndex >= questionPool.length) showResults();
+  else if (currentMode === 'weakspots') renderWeakSpotQuestion();
   else renderQuestion();
 });
 
@@ -2324,6 +2631,9 @@ function showResults() {
   document.getElementById('result-total').textContent = questionPool.length;
   const pct = Math.round((correctCount / questionPool.length) * 100);
   document.getElementById('result-percent').textContent = `${pct}%`;
+
+  // Persist the score for this mode
+  recordScore(currentMode, correctCount, questionPool.length);
 
   let msg;
   if (pct === 100) msg = 'Perfect score. The Knowledge is yours.';
@@ -2363,6 +2673,15 @@ document.getElementById('btn-different-mode').addEventListener('click', () => {
 
 // =============== INIT ===============
 updateAvailableCount();
+renderStartScreenStats();
+
+// Reset all progress button
+document.getElementById('btn-reset-stats').addEventListener('click', () => {
+  if (confirm('Reset all scores and weak spots? This cannot be undone.')) {
+    resetAllStats();
+    renderStartScreenStats();
+  }
+});
 </script>
 
 </body>
